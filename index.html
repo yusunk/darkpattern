@@ -245,10 +245,42 @@
 
 <!-- API Key Modal -->
 <div class="modal-overlay" id="keyModal" style="display:none" onclick="closeKeyModal(event)">
-  <div class="modal-box">
-    <h3>🔑 Anthropic API 키 설정</h3>
-    <p>키는 이 브라우저에만 저장되며 외부로 전송되지 않습니다. 점검 실행 시 Anthropic API에 직접 전달됩니다.</p>
-    <input class="key-input" id="keyInput" type="password" placeholder="sk-ant-api03-..." />
+  <div class="modal-box" style="width:min(560px,92vw)">
+    <h3>🔑 API 설정</h3>
+    <p style="margin-bottom:10px">키는 이 브라우저에만 저장됩니다. GitHub Pages에서 직접 Anthropic API를 호출하려면 CORS 프록시 설정이 필요합니다.</p>
+
+    <label style="font-size:12px;font-weight:900;display:block;margin-bottom:4px">Anthropic API 키 <span style="color:var(--red)">*</span></label>
+    <input class="key-input" id="keyInput" type="password" placeholder="sk-ant-api03-..." style="margin-bottom:12px"/>
+
+    <details id="proxyDetails" style="border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:4px">
+      <summary style="font-size:12px;font-weight:900;cursor:pointer;color:var(--blue)">⚡ CORS 프록시 설정 (GitHub Pages에서 필수)</summary>
+      <div style="margin-top:10px">
+        <p style="font-size:12px;color:#344054;margin:0 0 8px">브라우저에서 직접 Anthropic API를 호출하면 CORS 오류가 발생할 수 있습니다.<br>아래 Cloudflare Worker를 무료로 배포하여 프록시 URL을 입력하세요.</p>
+        <label style="font-size:12px;font-weight:900;display:block;margin-bottom:4px">프록시 URL <span style="font-size:11px;color:var(--muted);font-weight:400">(선택 — 없으면 직접 호출 시도)</span></label>
+        <input class="key-input" id="proxyInput" type="url" placeholder="https://your-worker.workers.dev/" style="font-family:ui-monospace,monospace;font-size:13px;margin-bottom:10px"/>
+        <div style="background:#f8f9fa;border:1px solid var(--line);border-radius:8px;padding:10px">
+          <div style="font-size:11px;font-weight:900;color:#475467;margin-bottom:6px">Cloudflare Worker 설정 방법</div>
+          <div style="font-size:11px;color:#475467;margin-bottom:6px">1. <a href="https://workers.cloudflare.com" target="_blank" style="color:var(--blue)">workers.cloudflare.com</a> 무료 가입 → 새 Worker 생성</div>
+          <div style="font-size:11px;color:#475467;margin-bottom:6px">2. 아래 코드를 붙여넣고 배포:</div>
+          <pre style="font-size:10.5px;background:#fff;border:1px solid var(--line);border-radius:6px;padding:8px;margin:0;overflow:auto;color:#1f2937">export default {
+  async fetch(req) {
+    if (req.method === 'OPTIONS') return new Response(null, {headers:{
+      'Access-Control-Allow-Origin':'*',
+      'Access-Control-Allow-Methods':'POST,OPTIONS',
+      'Access-Control-Allow-Headers':'*'
+    }});
+    const url = req.url.replace(/.*?(\/v1\/)/, 'https://api.anthropic.com/v1/');
+    const res = await fetch(url, {method:req.method, headers:req.headers, body:req.body});
+    const r = new Response(res.body, res);
+    r.headers.set('Access-Control-Allow-Origin','*');
+    return r;
+  }
+};</pre>
+          <div style="font-size:11px;color:#475467;margin-top:6px">3. Worker URL(예: <code style="font-size:10px">https://xxx.workers.dev</code>)을 위 입력란에 붙여넣기</div>
+        </div>
+      </div>
+    </details>
+
     <div class="modal-actions">
       <button class="btn btn-small" onclick="closeKeyModal()">취소</button>
       <button class="btn btn-primary btn-small" onclick="saveKey()">저장</button>
@@ -260,17 +292,23 @@
 <script>
 // ── API KEY MANAGEMENT ──────────────────────────────────────────────
 const KEY_STORE = 'dp_anthropic_key';
+const PROXY_STORE = 'dp_proxy_url';
 function getKey(){ return localStorage.getItem(KEY_STORE) || ''; }
+function getProxy(){ return (localStorage.getItem(PROXY_STORE) || '').trim().replace(/\/+$/, ''); }
 function saveKey(){
   const v = document.getElementById('keyInput').value.trim();
   if(!v){ showToast('API 키를 입력해주세요.'); return; }
   localStorage.setItem(KEY_STORE, v);
+  const px = document.getElementById('proxyInput').value.trim().replace(/\/+$/, '');
+  if(px) localStorage.setItem(PROXY_STORE, px);
+  else localStorage.removeItem(PROXY_STORE);
   document.getElementById('keyModal').style.display = 'none';
   updateKeyBadge();
-  showToast('API 키가 저장되었습니다.');
+  showToast('설정이 저장되었습니다.');
 }
 function openKeyModal(){
   document.getElementById('keyInput').value = getKey();
+  document.getElementById('proxyInput').value = getProxy();
   document.getElementById('keyModal').style.display = 'flex';
   setTimeout(()=>document.getElementById('keyInput').focus(), 80);
 }
@@ -280,8 +318,9 @@ function closeKeyModal(e){
 }
 function updateKeyBadge(){
   const btn = document.getElementById('apiKeyBtn');
-  btn.textContent = getKey() ? '⚙️ ✓' : '⚙️';
-  btn.title = getKey() ? 'API 키 설정됨 (클릭하여 변경)' : 'API 키 미설정 — 클릭하여 입력';
+  const hasProxy = !!getProxy();
+  btn.textContent = getKey() ? (hasProxy ? '⚙️ ✓P' : '⚙️ ✓') : '⚙️';
+  btn.title = getKey() ? `API 키 설정됨${hasProxy?' (프록시 사용)':' (직접 호출)'} — 클릭하여 변경` : 'API 키 미설정 — 클릭하여 입력';
 }
 document.addEventListener('DOMContentLoaded', ()=>{ updateKeyBadge(); if(!getKey()) setTimeout(openKeyModal, 800); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeKeyModal(); });
@@ -346,21 +385,32 @@ grade는 🚫가 1개 이상이면 "🔴 리스크 발견", ⚠️만 있으면 
 async function callClaude(userText) {
   const key = getKey();
   if (!key) { openKeyModal(); throw new Error('API 키가 필요합니다.'); }
-  const resp = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': key,
-      'anthropic-version': '2023-06-01',
-      'content-type': 'application/json',
-      'anthropic-dangerous-direct-browser-calls': 'true'
-    },
-    body: JSON.stringify({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2000,
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: `다음 온라인 금융 화면/UX 내용을 점검해주세요:\n\n${userText}` }]
-    })
-  });
+  const proxy = getProxy();
+  const endpoint = proxy ? `${proxy}/v1/messages` : 'https://api.anthropic.com/v1/messages';
+  const headers = {
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+    'content-type': 'application/json'
+  };
+  if (!proxy) headers['anthropic-dangerous-direct-browser-calls'] = 'true';
+  let resp;
+  try {
+    resp = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 2000,
+        system: SYSTEM_PROMPT,
+        messages: [{ role: 'user', content: `다음 온라인 금융 화면/UX 내용을 점검해주세요:\n\n${userText}` }]
+      })
+    });
+  } catch(netErr) {
+    const corsMsg = proxy
+      ? `프록시 서버(${proxy})에 연결할 수 없습니다. URL을 확인해주세요.`
+      : 'CORS/네트워크 오류 — ⚙️ 설정에서 Cloudflare Worker 프록시 URL을 입력하면 해결됩니다.';
+    throw new Error(corsMsg);
+  }
   if (!resp.ok) {
     const err = await resp.json().catch(()=>({}));
     if (resp.status === 401) throw new Error('API 키가 올바르지 않습니다. ⚙️ 버튼에서 키를 확인해주세요.');
@@ -368,7 +418,6 @@ async function callClaude(userText) {
   }
   const data = await resp.json();
   const raw = data.content[0].text.trim();
-  // Parse JSON (strip markdown code fences if present)
   const jsonStr = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
   return JSON.parse(jsonStr);
 }
