@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>금융상품 UX 다크패턴 점검</title>
+<style>
+  :root{
+    --bg:#f7f9fc; --paper:#fff; --ink:#161b26; --muted:#667085; --line:#d9e0ea;
+    --blue:#175cd3; --blue2:#eff6ff; --navy:#0f2b56; --green:#137333; --green2:#e6f4ea;
+    --yellow:#b26a00; --yellow2:#fff7e6; --red:#b3261e; --red2:#fde8e7; --violet:#6d28d9; --violet2:#f5f3ff;
+    --gray:#f2f4f7; --shadow:0 18px 48px rgba(16,42,86,.10); --radius:18px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans KR","Apple SD Gothic Neo","Malgun Gothic",Arial,sans-serif;line-height:1.55}
+  button,input,textarea,select{font-family:inherit}
+  .topbar{position:sticky;top:0;z-index:30;background:rgba(247,249,252,.94);backdrop-filter:blur(14px);border-bottom:1px solid rgba(217,224,234,.9)}
+  .topbar-inner{max-width:1240px;margin:0 auto;padding:13px 20px;display:flex;align-items:center;gap:18px;justify-content:space-between}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:950;color:var(--navy);letter-spacing:-.35px}.logo{width:34px;height:34px;border-radius:11px;background:linear-gradient(135deg,var(--blue),#5d8cff);display:grid;place-items:center;color:#fff;font-size:12px;font-weight:950;box-shadow:0 10px 18px rgba(23,92,211,.20)}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}.nav button{border:1px solid transparent;background:transparent;color:#475467;border-radius:999px;padding:9px 13px;font-size:13px;font-weight:900;cursor:pointer}.nav button:hover{background:#fff;border-color:var(--line)}.nav button.active{background:var(--blue);color:#fff;box-shadow:0 8px 18px rgba(23,92,211,.22)}
+  .wrap{max-width:1240px;margin:0 auto;padding:22px 20px 60px}.panel{display:none}.panel.active{display:block;animation:fade .18s ease}@keyframes fade{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+  .btn{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:900;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px;transition:.16s ease}.btn:hover{transform:translateY(-1px);box-shadow:0 10px 18px rgba(16,42,86,.10)}.btn-primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn-navy{background:var(--navy);border-color:var(--navy);color:#fff}.btn-soft{background:var(--blue2);color:var(--blue);border-color:#c7d7fe}.btn-small{padding:7px 10px;border-radius:10px;font-size:12px}.btn-ghost{background:transparent;border-color:transparent;color:#475467}.btn-red{background:var(--red);border-color:var(--red);color:#fff}
+  .badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;border:1px solid transparent;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}.b-blue{background:var(--blue2);color:var(--blue);border-color:#c7d7fe}.b-green{background:var(--green2);color:var(--green);border-color:#ccebd6}.b-yellow{background:var(--yellow2);color:var(--yellow);border-color:#ffe3b3}.b-red{background:var(--red2);color:var(--red);border-color:#f9c7c4}.b-violet{background:var(--violet2);color:var(--violet);border-color:#ddd6fe}.b-gray{background:var(--gray);color:#374151;border-color:#e5e7eb}
+  .small{font-size:12px;color:var(--muted)}.hint{font-size:11px;color:#98a2b3}.em{font-weight:950;color:var(--red)}.em-blue{font-weight:950;color:var(--blue)}
+
+  /* Audit input */
+  .ask-shell{min-height:calc(100vh - 110px);display:grid;align-content:center;justify-items:center;padding:40px 0 36px}.ask-title{font-size:28px;font-weight:500;letter-spacing:-.6px;margin:0 0 34px;text-align:center;color:#080b12}.ask-box{width:min(820px,100%);background:#fff;border:1px solid #d8dee8;border-radius:28px;box-shadow:0 18px 42px rgba(16,24,40,.10);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;padding:10px 12px 10px 17px}.plus{font-size:25px;color:#344054;line-height:1}.ask-input{width:100%;border:0;outline:0;resize:none;min-height:34px;max-height:170px;font-size:16px;line-height:1.55;padding:5px 0;background:transparent;color:#111827}.ask-input::placeholder{color:#9ca3af}.send-btn{width:42px;height:42px;border-radius:50%;border:0;background:#111827;color:#fff;display:grid;place-items:center;font-size:18px;cursor:pointer}.send-btn:disabled{opacity:.55;cursor:default}.ask-tools{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:14px}.status-line{min-height:24px;margin-top:14px;color:#667085;font-size:13px;text-align:center}.status-line .pulse{display:inline-block;width:7px;height:7px;background:var(--blue);border-radius:50%;margin-right:7px;animation:pulse 1.1s ease-in-out infinite}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+
+  /* Report */
+  .report{display:none;margin-top:22px}.report.show{display:block}.report-frame{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(16,42,86,.08);overflow:hidden}.report-head{padding:26px 28px 20px;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#ffffff 0%,#ffffff 66%,#e8f0fe 210%);display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap}.report-head h2{margin:0;font-size:25px;letter-spacing:-.45px}.report-head p{margin:6px 0 0;color:#667085;font-size:13px}.report-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.report-section{padding:19px 28px;border-bottom:1px solid #edf1f6}.report-section:last-child{border-bottom:0}.sec-title{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:9px;margin-bottom:12px}.sec-title h3{margin:0;font-size:17px;color:var(--blue)}.note{background:#fafafa;border-left:5px solid var(--blue);padding:12px;border-radius:10px;color:#344054}.callout{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}.callout strong{color:var(--red)}.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.summary-card{border:1px solid var(--line);border-radius:13px;background:#fff;padding:12px}.summary-card b{display:block;font-size:24px}.summary-card span{font-size:12px;color:#667085;font-weight:900}.filter-bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:10px;border:1px solid var(--line);border-radius:12px;background:#fff;margin:10px 0}.fbtn{appearance:none;border:1px solid var(--line);background:#fff;color:#111827;padding:6px 10px;border-radius:999px;font-weight:800;font-size:12px;cursor:pointer}.fbtn.active{border-color:#dbe7ff;background:var(--blue2);color:var(--blue)}.fbtn.secondary{background:#f9fafb;color:#374151}.fsep{width:1px;height:22px;background:var(--line);margin:0 4px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px}table.audit-table{width:100%;border-collapse:collapse;background:#fff}table.audit-table th{background:var(--blue);color:#fff;text-align:left;font-size:12px;padding:10px;white-space:nowrap}table.audit-table td{font-size:12.3px;padding:10px;border-bottom:1px solid #eef2f6;vertical-align:top}table.audit-table tr:last-child td{border-bottom:0}.result-col{width:118px}details{border:1px solid var(--line);border-radius:14px;padding:11px 13px;background:#fff}details+details{margin-top:10px}summary{cursor:pointer;font-weight:950;color:#111827;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:12px}summary::-webkit-details-marker{display:none}summary:after{content:"▾";color:var(--muted);font-weight:900}details[open] summary:after{content:"▴"}.checklist{margin:0;padding-left:0;list-style:none}.checklist li{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px dashed var(--line)}.checklist li:last-child{border-bottom:0}.ck{width:16px;height:16px;margin-top:2px;accent-color:var(--blue)}.report-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}.footer-report{padding:16px 28px 22px;border-top:1px solid var(--line);background:#fbfbfb;color:var(--muted);font-size:12px}.refs{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:11.5px;color:#4b5563;margin-top:6px}
+
+  /* Swing form */
+  .swing-area{display:flex;justify-content:center}.paper-form{width:820px;background:#fff;color:#111;padding:26px 34px 42px;border-radius:8px;box-shadow:0 16px 45px rgba(16,42,86,.10);position:relative}.paper-form:before{content:"";position:absolute;left:34px;right:34px;top:84px;border-top:4px solid #111}.doc-title{font-size:25px;text-align:center;font-weight:500;margin:0 0 50px;letter-spacing:-.4px}.approval-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:8px}.appr{display:grid;grid-template-columns:34px 1fr;border:2px solid #111;height:96px}.appr-label{border-right:2px solid #111;display:grid;place-items:center;font-size:12px;line-height:1.15;white-space:pre-line}.appr-grid{display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:24px 68px}.appr-grid div{border-right:1px solid #111;border-bottom:1px solid #111;font-size:12px;display:grid;place-items:center}.appr-grid div:nth-child(5n){border-right:0}.appr-grid div:nth-child(n+6){border-bottom:0}.appr-grid .right{justify-content:end;padding-right:8px}.appr-grid .name{font-size:13px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 44px;font-size:13px;margin:6px 0 22px}.info-row{display:grid;grid-template-columns:70px 10px 1fr}.form-table{width:100%;border-collapse:collapse;border:2px solid #111;font-size:13px}.form-table td{border:2px solid #111;vertical-align:middle}.form-table .label{width:190px;text-align:center;background:#ddd;padding:8px 6px;font-size:13px}.form-table .value{padding:7px 10px}.line-input{border:0;outline:0;width:100%;font-size:13px;background:transparent}.check-grid{display:grid;grid-template-columns:repeat(4,auto);gap:3px 15px;justify-content:start}.square{display:inline-block;width:14px;height:14px;border:1px solid #c8c8c8;background:#f5f5f5;margin-right:5px;vertical-align:-2px}.round{display:inline-block;width:14px;height:14px;border:1px solid #cfcfcf;border-radius:50%;background:#f5f5f5;margin-right:4px;vertical-align:-2px}.dark-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px}.dark-row-left{display:flex;gap:8px;align-items:center}.dark-row-right{display:flex;align-items:center;justify-content:flex-end;gap:8px}.dark-row .agent-btn{border:1px solid #111;background:#fff;border-radius:0;padding:3px 10px;font-size:12px;cursor:pointer}.dark-row .report-link{border:0;background:transparent;text-decoration:underline;cursor:pointer;font-size:12px;color:#111;display:none}.dark-row .report-link.visible{display:inline}.dark-row .status-badge{border:1px solid #bbb;border-radius:999px;padding:2px 7px;font-size:11px;background:#f5f5f5;color:#555}.system-report{display:none;margin-top:8px;border:1px solid #bbb;background:#fafafa;padding:9px;font-size:12px;color:#222;line-height:1.55}.system-report.visible{display:block}.notice{font-size:12px;color:#d92d20;font-weight:800;margin:8px 0 2px}.notice-sub,.recipient{font-size:12px;color:#444;margin:2px 0}.submit-area{display:flex;justify-content:center;gap:10px;margin-top:16px}.detail-cell textarea{border:0;outline:0;width:100%;min-height:50px;resize:vertical;background:transparent;font-size:13px}
+
+  /* Graph */
+  .graph-wrap{display:grid;grid-template-columns:1fr 300px;gap:16px}.graph-card{background:#fff;border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 28px rgba(16,42,86,.06);overflow:hidden}.graph-head{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;background:linear-gradient(180deg,#fff,#fbfcff)}.graph-head h1{font-size:20px;margin:0}.graph-head p{font-size:12px;color:var(--muted);margin:4px 0 0}.graph-stage{height:710px;position:relative;background:#fff;overflow:hidden}.graph-stage svg{width:100%;height:100%;display:block}.g-edge{stroke:#d8dde6;stroke-width:1.25;transition:.18s ease}.g-edge.active{stroke:#7c3aed;stroke-width:2.1}.g-edge.faded{stroke:#eceff5;opacity:.35}.g-node{cursor:pointer;transition:.18s ease}.g-node circle{stroke:#fff;stroke-width:2.5}.g-node text{font-size:12px;fill:#313846;paint-order:stroke;stroke:#fff;stroke-width:3px;stroke-linejoin:round}.g-node.active circle{filter:drop-shadow(0 0 8px rgba(124,58,237,.45));stroke:#7c3aed;stroke-width:3}.g-node.active text{font-size:13px;font-weight:900;fill:#111827}.g-node.faded{opacity:.22}.g-node.faded text{fill:#b6beca}.g-node.center text{font-weight:900}.side-panel{padding:15px 16px}.side-panel h3{margin:0 0 8px;font-size:16px}.node-info{border:1px solid var(--line);border-radius:14px;background:#fbfcff;padding:12px;color:#344054;font-size:12.5px;min-height:150px}.legend{display:grid;gap:8px;margin-top:12px}.legend div{display:flex;align-items:center;gap:8px;font-size:12px;color:#475467}.legend span{width:11px;height:11px;border-radius:50%;display:inline-block}.case-list{margin-top:12px;display:grid;gap:8px}.case-item{border:1px solid var(--line);border-radius:12px;background:#fff;padding:10px;font-size:12px}.case-item b{display:block;color:#111827;margin-bottom:3px}
+  .toast{position:fixed;right:18px;bottom:18px;z-index:99;background:#111827;color:#fff;border-radius:14px;padding:12px 14px;box-shadow:0 18px 42px rgba(0,0,0,.22);font-size:13px;display:none;max-width:360px}.toast.show{display:block;animation:fade .15s ease}
+
+  /* API Key Modal */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;display:flex;align-items:center;justify-content:center;animation:fade .15s ease}
+  .modal-box{background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.2);padding:28px 28px 24px;width:min(480px,92vw)}
+  .modal-box h3{margin:0 0 8px;font-size:18px}
+  .modal-box p{margin:0 0 16px;font-size:13px;color:var(--muted)}
+  .key-input{width:100%;border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;font-size:14px;outline:none;font-family:ui-monospace,monospace}
+  .key-input:focus{border-color:var(--blue)}
+  .modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .key-status{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:4px 10px;border-radius:999px;border:1px solid}
+  .key-set{background:#e6f4ea;color:#137333;border-color:#ccebd6}
+  .key-unset{background:#fff7e6;color:#b26a00;border-color:#ffe3b3}
+  /* Streaming cursor */
+  .stream-cursor{display:inline-block;width:2px;height:14px;background:var(--blue);margin-left:2px;vertical-align:-2px;animation:blink .7s step-end infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+  @media print{body{background:#fff}.topbar,.btn,.filter-bar,.ask-shell{display:none!important}.wrap{padding:0}.report{display:block!important}.report-frame,.paper-form{box-shadow:none;border-radius:0}}
+  @media (max-width:980px){.topbar-inner{align-items:flex-start;flex-direction:column}.nav{justify-content:flex-start}.summary-grid{grid-template-columns:repeat(2,1fr)}.graph-wrap{grid-template-columns:1fr}.graph-stage{height:560px}.paper-form{width:100%;padding:22px 18px}.approval-row{grid-template-columns:1fr}.info-grid{grid-template-columns:1fr}.form-table .label{width:130px}.check-grid{grid-template-columns:repeat(2,auto)}}
+  @media (max-width:560px){.wrap{padding:14px 12px 40px}.ask-title{font-size:24px}.ask-box{border-radius:22px;grid-template-columns:auto 1fr auto}.summary-grid{grid-template-columns:1fr}.report-head,.report-section,.footer-report{padding-left:16px;padding-right:16px}.graph-stage{height:460px}.g-node text{font-size:10px}.paper-form{padding:18px 10px}.doc-title{font-size:21px}.appr-grid{grid-template-columns:repeat(3,1fr)}.appr-grid div:nth-child(4),.appr-grid div:nth-child(5),.appr-grid div:nth-child(9),.appr-grid div:nth-child(10){display:none}.form-table .label{width:90px;font-size:12px}.dark-row{grid-template-columns:1fr}.dark-row-right{justify-content:flex-start}.check-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><div class="logo">AI</div><div>금융상품 UX 다크패턴 점검</div></div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="nav" role="tablist">
+        <button class="active" data-tab="audit">온라인 다크패턴 점검하기</button>
+        <button data-tab="swing">Swing 연동하기</button>
+        <button data-tab="casebook">다크패턴 사례집</button>
+      </div>
+      <button class="btn btn-small" id="apiKeyBtn" onclick="openKeyModal()" title="API 키 미설정 — 클릭하여 입력" style="gap:5px;min-width:36px;">⚙️</button>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- ── AUDIT PANEL ── -->
+  <div id="audit" class="panel active">
+    <div class="ask-shell">
+      <h1 class="ask-title">금융 화면 다크패턴 자체점검</h1>
+      <div class="ask-box">
+        <span class="plus">✦</span>
+        <textarea class="ask-input" id="auditPrompt" rows="1" placeholder="점검할 화면의 문구, UX 흐름, 팝업 내용 등을 입력하세요…"></textarea>
+        <button class="send-btn" id="auditSend" onclick="runAudit()" title="점검 실행 (Ctrl+Enter)">▶</button>
+      </div>
+      <div class="ask-tools">
+        <button class="btn btn-small btn-soft" onclick="fillPrompt('card')">카드 발급 리볼빙 팝업</button>
+        <button class="btn btn-small btn-soft" onclick="fillPrompt('fund')">펀드 가입 투자설명서</button>
+        <button class="btn btn-small btn-soft" onclick="fillPrompt('close')">ISA 해지 경로</button>
+      </div>
+      <div class="status-line" id="auditStatus"></div>
+    </div>
+    <div class="report" id="auditReport"></div>
+  </div>
+
+  <!-- ── SWING PANEL ── -->
+  <div id="swing" class="panel">
+    <div class="swing-area">
+      <div class="paper-form">
+        <div class="doc-title">디지털 콘텐츠 개발 신청서</div>
+
+        <div class="approval-row">
+          <div class="appr">
+            <div class="appr-label">결&#10;재</div>
+            <div class="appr-grid">
+              <div>담당</div><div>팀장</div><div>부서장</div><div>준법감시</div><div>최종승인</div>
+              <div class="name"></div><div class="name"></div><div class="name"></div><div class="name"></div><div class="name"></div>
+            </div>
+          </div>
+          <div>
+            <div class="info-grid">
+              <div class="info-row"><span>부서</span><span>:</span><span>디지털채널팀</span></div>
+              <div class="info-row"><span>직위</span><span>:</span><span>대리</span></div>
+              <div class="info-row"><span>성명</span><span>:</span><span>김지원</span></div>
+              <div class="info-row"><span>전화번호</span><span>:</span><span>02-3772-XXXX</span></div>
+              <div class="info-row"><span>기안일자</span><span>:</span><span id="swDraftDate"></span></div>
+              <div class="info-row"><span>문서번호</span><span>:</span><span>DCD-2026-0610-042</span></div>
+            </div>
+          </div>
+        </div>
+
+        <table class="form-table">
+          <tr>
+            <td class="label">제목</td>
+            <td class="value"><input class="line-input" value="SOL증권 이벤트 배너 — 여름 ETF 특집 프로모션"></td>
+          </tr>
+          <tr>
+            <td class="label">구분</td>
+            <td class="value">
+              <div class="check-grid">
+                <label><span class="square"></span>대고객공지</label>
+                <label><span class="square" style="background:var(--blue);border-color:var(--blue)"></span>플랫폼반영</label>
+                <label><span class="square"></span>이벤트배너</label>
+                <label><span class="square"></span>신규화면개발</label>
+                <label><span class="square"></span>UX검토</label>
+                <label><span class="square"></span>기타</label>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">채널</td>
+            <td class="value">
+              <div class="check-grid">
+                <label><span class="round" style="background:var(--blue);border-color:var(--blue)"></span>SOL증권</label>
+                <label><span class="round"></span>SOL HTS</label>
+                <label><span class="round"></span>신한모바일</label>
+                <label><span class="round" style="background:var(--blue);border-color:var(--blue)"></span>모바일웹</label>
+                <label><span class="round"></span>홈페이지</label>
+                <label><span class="round"></span>기타</label>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">영역</td>
+            <td class="value"><input class="line-input" value="메인 홈 배너, 이벤트 랜딩페이지"></td>
+          </tr>
+          <tr>
+            <td class="label">다크패턴<br>자체점검</td>
+            <td class="value">
+              <div class="dark-row">
+                <div class="dark-row-left">
+                  <button class="agent-btn" id="swAgentBtn" onclick="runSwingAgent()">⚡ Agent 점검 실행</button>
+                  <button class="report-link" id="swReportLink" onclick="toggleSwingReport()">보고서 보기/닫기</button>
+                </div>
+                <div></div>
+                <div class="dark-row-right">
+                  <span class="status-badge" id="swStatusBadge">대기 중</span>
+                </div>
+              </div>
+              <div class="system-report" id="swReport"></div>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">세부 내용</td>
+            <td class="value detail-cell">
+              <textarea id="swDetail">이벤트 배너 내 "지금 놓치면 손해" 문구 사용 및 카운트다운 타이머 실제 종료일 불일치 여부 점검 필요. 리볼빙 권유 팝업의 버튼 위계(파란색 확인 vs 회색 거절) 적정성 검토 요청.</textarea>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">점검 결과</td>
+            <td class="value">
+              <div class="check-grid" id="swResultGrid">
+                <label><input type="checkbox" id="swR1" onchange="swSyncResult(this)"> ✅ 준수</label>
+                <label><input type="checkbox" id="swR2" onchange="swSyncResult(this)"> ⚠️ 보완권고</label>
+                <label><input type="checkbox" id="swR3" onchange="swSyncResult(this)"> 🚫 수정필요</label>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">사전 협의자</td>
+            <td class="value"><input class="line-input" value="준법감시팀 이준호 과장"></td>
+          </tr>
+          <tr>
+            <td class="label">완료 희망일</td>
+            <td class="value"><input class="line-input" id="swDueDate" type="date"></td>
+          </tr>
+        </table>
+
+        <div class="notice">※ 결재 상신 전 다크패턴 자체점검 결과를 반드시 기재하시기 바랍니다.</div>
+        <div class="notice-sub">· 금융감독원 「온라인 금융상품 판매 관련 다크패턴 가이드라인」 체크리스트 기준으로 AI가 자동 점검합니다.</div>
+        <div class="recipient">수신: 준법감시팀 / 디지털채널팀장</div>
+
+        <div class="submit-area">
+          <button class="btn btn-navy" onclick="submitSwing()">📤 결재 상신</button>
+          <button class="btn" onclick="alert('작성을 취소하시겠습니까?')">취소</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CASEBOOK PANEL ── -->
+  <div id="casebook" class="panel">
+    <div class="graph-wrap">
+      <div class="graph-card">
+        <div class="graph-head">
+          <div>
+            <h1>다크패턴 지식 그래프</h1>
+            <p>범주 · 유형 · 사례 연결망 — 노드에 마우스를 올리면 관련 항목이 강조됩니다</p>
+          </div>
+          <span class="badge b-violet">인터랙티브</span>
+        </div>
+        <div class="graph-stage">
+          <svg id="kgSvg" viewBox="0 0 910 710" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+      <div class="graph-card">
+        <div class="graph-head"><div><h1>노드 정보</h1><p>노드를 선택하면 세부 내용이 표시됩니다</p></div></div>
+        <div class="side-panel">
+          <h3>선택된 항목</h3>
+          <div class="node-info" id="nodeInfo">원에 마우스를 올리면 연결된 사례와 유형만 강조됩니다.</div>
+          <div class="legend">
+            <div><span style="background:#9ca3af"></span>문서/가이드라인</div>
+            <div><span style="background:#fb7185"></span>4대 범주</div>
+            <div><span style="background:#a855f7"></span>15개 세부유형</div>
+            <div><span style="background:#0b63ff"></span>누적 사례</div>
+          </div>
+          <div class="case-list" id="caseList"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<!-- API Key Modal -->
+<div class="modal-overlay" id="keyModal" style="display:none" onclick="closeKeyModal(event)">
+  <div class="modal-box">
+    <h3>🔑 Anthropic API 키 설정</h3>
+    <p>키는 이 브라우저에만 저장되며 외부로 전송되지 않습니다. 점검 실행 시 Anthropic API에 직접 전달됩니다.</p>
+    <input class="key-input" id="keyInput" type="password" placeholder="sk-ant-api03-..." />
+    <div class="modal-actions">
+      <button class="btn btn-small" onclick="closeKeyModal()">취소</button>
+      <button class="btn btn-primary btn-small" onclick="saveKey()">저장</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── API KEY MANAGEMENT ──────────────────────────────────────────────
+const KEY_STORE = 'dp_anthropic_key';
+function getKey(){ return localStorage.getItem(KEY_STORE) || ''; }
+function saveKey(){
+  const v = document.getElementById('keyInput').value.trim();
+  if(!v){ showToast('API 키를 입력해주세요.'); return; }
+  localStorage.setItem(KEY_STORE, v);
+  document.getElementById('keyModal').style.display = 'none';
+  updateKeyBadge();
+  showToast('API 키가 저장되었습니다.');
+}
+function openKeyModal(){
+  document.getElementById('keyInput').value = getKey();
+  document.getElementById('keyModal').style.display = 'flex';
+  setTimeout(()=>document.getElementById('keyInput').focus(), 80);
+}
+function closeKeyModal(e){
+  if(!e || e.target === document.getElementById('keyModal'))
+    document.getElementById('keyModal').style.display = 'none';
+}
+function updateKeyBadge(){
+  const btn = document.getElementById('apiKeyBtn');
+  btn.textContent = getKey() ? '⚙️ ✓' : '⚙️';
+  btn.title = getKey() ? 'API 키 설정됨 (클릭하여 변경)' : 'API 키 미설정 — 클릭하여 입력';
+}
+document.addEventListener('DOMContentLoaded', ()=>{ updateKeyBadge(); if(!getKey()) setTimeout(openKeyModal, 800); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeKeyModal(); });
+
+// ── CLAUDE API CALL ─────────────────────────────────────────────────
+const SYSTEM_PROMPT = `당신은 증권사 플랫폼 그룹의 다크패턴 자체감사(Self-Audit) 담당자입니다.
+금융감독원 「온라인 금융상품 판매 관련 다크패턴 가이드라인」의 4대 범주·15개 유형 체계를 유일 준거로 삼아 입력된 화면/문구를 점검합니다.
+
+## 4대 범주·15개 유형 정의
+### 오도형 (5개)
+1. 설명절차의 과도한 축약: 설명 화면을 건너뛰거나, 개별 이해 확인을 생략하고 일괄 확인으로 갈음하는 구조
+2. 속임수 질문: 두 질문을 동시에 묻거나, 모호한 버튼/이중부정으로 의도하지 않은 답변을 유도
+3. 잘못된 계층구조: 사업자에게 유리한 선택을 색상·크기·위치로 현저하게 강조
+4. 특정 옵션의 사전선택: 선택 동의·부가서비스·리볼빙·자동이체 등이 기본값으로 체크된 상태
+5. 허위광고 및 기만적인 유인행위: 업계 최고, 확정 수익, 비교 기준 불명확, 조건 누락 등
+
+### 방해형 (4개)
+6. 취소·탈퇴 등의 방해: 가입보다 해지·취소·탈퇴 경로가 복잡하거나 상담원 연결이 필수
+7. 숨겨진 정보: 중요 정보가 '자세히 보기', 다운로드, 좌우 스크롤, 작은 글씨에 숨어 있음
+8. 가격비교 방해: 상품별 금리·수수료 표시 기준이 일관되지 않거나 유리한 정보만 선별
+9. 클릭 피로감 유발: 권리 행사, 상담 채널, 전체취소 등에 불필요한 클릭이 과도하게 필요
+
+### 압박형 (5개)
+10. 계약과정 중 기습적 광고: 주된 계약 절차 중 관련 없는 부가서비스·상품 광고가 노출
+11. 반복간섭: 거부 또는 유보 의사 표시 이후 동일 요구를 2회 이상 반복
+12. 감정적 언어사용: 불안·부담·기회손실을 자극하는 문구로 선택을 압박
+13. 감각조작: 색상·깜빡임·강조 효과를 반복해 특정 선택을 유도
+14. 다른 소비자의 활동 알림: 가입자 수, 이용 현황, 후기 등을 거짓으로 알림
+
+### 편취유도형 (1개)
+15. 순차공개 가격책정: 첫 화면의 최대 혜택·최저 이율과 실제 조건·비용이 단계적으로 드러남
+
+## 출력 형식 (반드시 JSON으로만 응답)
+다음 JSON 스키마를 정확히 따르세요. JSON 외의 텍스트는 일절 출력하지 마세요.
+
+{
+  "title": "점검 대상 요약 (40자 이내)",
+  "grade": "🟢 안정 | 🟡 보완 권고 | 🔴 리스크 발견",
+  "gradeCls": "b-green | b-yellow | b-red",
+  "summary": "종합 감사 의견 2~3문장",
+  "rows": [
+    {
+      "cat": "오도형 | 방해형 | 압박형 | 편취유도형",
+      "type": "15개 유형 중 정확한 명칭",
+      "status": "✅ | ⚠️ | 🚫 | N/A",
+      "opinion": "가이드라인 기준 판단 근거와 권고사항 (2~3문장)"
+    }
+  ],
+  "planningPoints": ["긍정적 기획 요소 1~3개"],
+  "actionItems": [
+    {"title": "조치 항목명", "desc": "구체적 권고 내용"}
+  ],
+  "checkItems": [
+    {"label": "확인 항목명", "desc": "현업 소명 필요 사항"}
+  ]
+}
+
+rows 배열은 15개 유형을 모두 포함해야 합니다.
+status: ✅(준수), ⚠️(보완 권고), 🚫(필수 수정), N/A(해당 없음)
+grade는 🚫가 1개 이상이면 "🔴 리스크 발견", ⚠️만 있으면 "🟡 보완 권고", 모두 ✅/N/A면 "🟢 안정"`;
+
+async function callClaude(userText) {
+  const key = getKey();
+  if (!key) { openKeyModal(); throw new Error('API 키가 필요합니다.'); }
+  const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'content-type': 'application/json',
+      'anthropic-dangerous-direct-browser-calls': 'true'
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2000,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: 'user', content: `다음 온라인 금융 화면/UX 내용을 점검해주세요:\n\n${userText}` }]
+    })
+  });
+  if (!resp.ok) {
+    const err = await resp.json().catch(()=>({}));
+    if (resp.status === 401) throw new Error('API 키가 올바르지 않습니다. ⚙️ 버튼에서 키를 확인해주세요.');
+    throw new Error(err.error?.message || `API 오류 (${resp.status})`);
+  }
+  const data = await resp.json();
+  const raw = data.content[0].text.trim();
+  // Parse JSON (strip markdown code fences if present)
+  const jsonStr = raw.replace(/^```json\s*/,'').replace(/^```\s*/,'').replace(/\s*```$/,'');
+  return JSON.parse(jsonStr);
+}
+
+// ── CONSTANTS ────────────────────────────────────────────────────────
+const TYPE_HINTS = {
+  '설명절차의 과도한 축약':'설명 화면 건너뛰기, 개별 이해확인 생략, 일괄 확인으로 갈음하는 구조를 점검함.',
+  '속임수 질문':'두 질문을 한 번에 묻거나 모호한 버튼/이중부정으로 의도하지 않은 답변을 유도하는지 점검함.',
+  '잘못된 계층구조':'사업자에게 유리한 선택을 색상·크기·위치로 현저하게 강조하는지 점검함.',
+  '특정 옵션의 사전선택':'선택 동의, 부가서비스, 리볼빙, 자동이체 등이 기본값으로 체크되어 있는지 점검함.',
+  '허위광고 및 기만적인 유인행위':'업계 최고, 확정 수익, 비교 기준 불명확, 조건 누락 등을 점검함.',
+  '취소·탈퇴 등의 방해':'가입보다 해지·취소·탈퇴 경로가 복잡하거나 상담원 연결을 필수로 하는지 점검함.',
+  '숨겨진 정보':'중요 정보가 자세히 보기, 다운로드, 좌우 스크롤, 작은 글씨에 숨어 있는지 점검함.',
+  '가격비교 방해':'상품별 금리·수수료 표시 기준이 일관되지 않거나 유리한 정보만 선별하는지 점검함.',
+  '클릭 피로감 유발':'권리 행사, 상담 채널, 전체취소 등에 불필요한 클릭이 많은지 점검함.',
+  '계약과정 중 기습적 광고':'주된 계약 절차 중 관련 없는 부가서비스·상품 광고가 노출되는지 점검함.',
+  '반복간섭':'거부 또는 유보 의사 표시 이후 동일 요구를 2회 이상 반복하는지 점검함.',
+  '감정적 언어사용':'불안·부담·기회손실을 자극하는 문구로 선택을 압박하는지 점검함.',
+  '감각조작':'색상, 깜빡임, 강조 효과를 반복해 특정 선택을 유도하는지 점검함.',
+  '다른 소비자의 활동 알림':'가입자 수, 이용 현황, 후기 등을 거짓으로 알리는지 점검함.',
+  '순차공개 가격책정':'첫 화면의 최대 혜택·최저 이율과 실제 조건·비용이 뒤늦게 드러나는지 점검함.'
+};
+const PROMPTS = {
+  card:'카드 발급 과정에서 휴대폰 인증 완료 직후 리볼빙 안내 팝업이 노출됩니다. 문구는 "이번달 결제금액이 부담스러우세요? 리볼빙으로 여유 있게 관리해보세요"입니다. 확인 버튼은 파란색으로 크게 보이고, 다음에 하기는 회색 텍스트로 표시됩니다.',
+  fund:'펀드 가입 화면에서 투자설명서 다운로드 버튼만 누르면 다음 단계로 진행할 수 있습니다. 원금손실 가능성과 수수료 설명은 자세히 보기 안에 있고, 펀드 재투자 여부는 찬성으로 기본 체크되어 있습니다.',
+  close:'ISA 해지 메뉴가 앱 설정 화면에 보이지 않고 챗봇 문의를 거쳐야 안내됩니다. 해지를 진행하려면 상담원 전화 연결이 필요하다고 표시되지만 전화가 필요한 사유는 별도로 안내되지 않습니다.'
+};
+
+function escapeHtml(s){return String(s||'').replace(/[&<>'"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[m]));}
+function fillPrompt(k){const t=document.getElementById('auditPrompt');t.value=PROMPTS[k]||'';autoResize(t);t.focus();}
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,170)+'px';}
+document.getElementById('auditPrompt').addEventListener('input',e=>autoResize(e.target));
+document.getElementById('auditPrompt').addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.metaKey||e.ctrlKey))runAudit();});
+document.querySelectorAll('.nav button').forEach(btn=>btn.addEventListener('click',()=>{
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(btn.dataset.tab).classList.add('active');
+  if(btn.dataset.tab==='casebook')renderGraph();
+}));
+
+// ── AUDIT RUNNER ─────────────────────────────────────────────────────
+async function runAudit(){
+  const input = document.getElementById('auditPrompt');
+  const text = input.value.trim();
+  if(!text){showToast('점검할 화면 문구 또는 UX 흐름을 입력해주세요.');input.focus();return;}
+  if(!getKey()){openKeyModal();return;}
+  const status = document.getElementById('auditStatus');
+  const send = document.getElementById('auditSend');
+  send.disabled = true;
+  const stages = ['입력 내용을 구조화하는 중','가이드라인 세부유형과 대조하는 중','자체점검 보고서를 작성하는 중'];
+  let i = 0;
+  status.innerHTML = '<span class="pulse"></span>' + stages[0];
+  const timer = setInterval(()=>{i=Math.min(i+1,stages.length-1);status.innerHTML='<span class="pulse"></span>'+stages[i];},900);
+  try {
+    const analysis = await callClaude(text);
+    clearInterval(timer);
+    renderReport(text, analysis);
+    status.textContent = '점검 완료';
+    document.getElementById('auditReport').scrollIntoView({behavior:'smooth',block:'start'});
+  } catch(err) {
+    clearInterval(timer);
+    status.textContent = '';
+    showToast('오류: ' + err.message);
+  } finally {
+    send.disabled = false;
+  }
+}
+
+// ── REPORT RENDERER ──────────────────────────────────────────────────
+function renderReport(text, a){
+  const fail = (a.rows||[]).filter(r=>r.status==='🚫').length;
+  const warn = (a.rows||[]).filter(r=>r.status==='⚠️').length;
+  const pass = (a.rows||[]).filter(r=>r.status==='✅').length;
+  const na   = (a.rows||[]).filter(r=>r.status==='N/A').length;
+  const gradeCls = a.gradeCls || (fail>0?'b-red':warn>0?'b-yellow':'b-green');
+  const mainRisk = (a.rows||[]).find(r=>r.status==='🚫')||(a.rows||[]).find(r=>r.status==='⚠️')||(a.rows||[])[0]||{type:'',opinion:''};
+
+  const statusCls = r => r.status==='🚫'?'b-red':r.status==='⚠️'?'b-yellow':r.status==='✅'?'b-green':'b-gray';
+  const rowsHtml = (a.rows||[]).map(r=>`
+    <tr data-category="${r.cat}">
+      <td>${r.cat}</td><td>${r.type}</td>
+      <td><span class="badge ${statusCls(r)}">${r.status}</span></td>
+      <td>${escapeHtml(r.opinion)}<div class="small" style="margin-top:4px">기준: ${TYPE_HINTS[r.type]||''}</div></td>
+    </tr>`).join('');
+
+  const actionHtml = (a.actionItems||[]).map(it=>`<li><b>${escapeHtml(it.title||it)}</b><div class="small">${escapeHtml(it.desc||'')}</div></li>`).join('')
+    || '<li><b>현행 유지 가능</b><div class="small">중대한 리스크는 식별되지 않음.</div></li>';
+  const planHtml = (a.planningPoints||[]).map(p=>`<li>${escapeHtml(p)}</li>`).join('')
+    || '<li>가이드라인 준수 범위 내에서 화면이 구성됨.</li>';
+  const ckHtml = (a.checkItems||[]).slice(0,5).map((it,i)=>`
+    <li><input class="ck" type="checkbox" id="ck${i+1}">
+    <label for="ck${i+1}"><b>${escapeHtml(it.label||it)}</b>
+    <div class="small">${escapeHtml(it.desc||'현업 소명 필요')}</div></label></li>`).join('')
+    || `<li><input class="ck" type="checkbox" id="ck1"><label for="ck1"><b>추가 자료 확인</b><div class="small">화면 캡처와 클릭 경로를 첨부하여 최종 검토함</div></label></li>`;
+
+  const report = document.getElementById('auditReport');
+  report.classList.add('show');
+  report.innerHTML = `<div class="report-frame">
+    <div class="report-head">
+      <div>
+        <h2>📄 온라인 다크패턴 자체점검 리포트</h2>
+        <p>대상: <span class="em-blue">${escapeHtml(a.title||'온라인 화면')}</span></p>
+        <div class="report-meta">
+          <span class="badge b-blue">범위 사용자 입력 화면/문구</span>
+          <span class="badge b-gray">준거 금융위·금감원 가이드라인/체크리스트</span>
+          <span class="badge b-gray">✅ 준수 · ⚠️ 보완 권고 · 🚫 필수 수정 · N/A</span>
+        </div>
+      </div>
+      <span class="badge ${gradeCls}">${a.grade}</span>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>1. 점검 배경</h3></div>
+      <div class="note"><ul style="margin:0;padding-left:18px">
+        <li><b>점검 목적:</b> 온라인 금융상품 화면에서 금융소비자의 자율적 의사결정을 왜곡하거나 침해할 수 있는 요소를 사전 식별함.</li>
+        <li><b>분석 근거:</b> 온라인 금융상품 판매 관련 다크패턴 가이드라인 및 이행 체크리스트를 기준으로 적용함.</li>
+        <li><b>점검 취지:</b> 화면 문구와 선택 구조를 사전 검토하여 소비자 오인·방해·압박·편취유도 가능성을 낮추기 위함.</li>
+      </ul></div>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>2. 점검 대상</h3></div>
+      <div class="callout"><b>입력 내용</b><div style="margin-top:8px;white-space:pre-wrap">${escapeHtml(text)}</div></div>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>3. 점검 의견 (종합)</h3></div>
+      <div class="summary-grid">
+        <div class="summary-card"><b style="color:var(--red)">${fail}</b><span>필수 수정</span></div>
+        <div class="summary-card"><b style="color:var(--yellow)">${warn}</b><span>보완 권고</span></div>
+        <div class="summary-card"><b style="color:var(--green)">${pass}</b><span>준수</span></div>
+        <div class="summary-card"><b style="color:#475467">${na}</b><span>해당 없음</span></div>
+      </div>
+      <div class="callout" style="margin-top:12px">
+        자체점검 등급: <span class="badge ${gradeCls}">${a.grade}</span>
+        <div class="small" style="margin-top:8px">${escapeHtml(a.summary||'')}</div>
+      </div>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>4. 점검 결과 (세부)</h3></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <span class="badge b-green">✅ 준수</span><span class="badge b-yellow">⚠️ 보완 권고</span>
+        <span class="badge b-red">🚫 리스크(필수 수정)</span><span class="badge b-gray">N/A 해당 없음</span>
+        <span class="small" style="margin-left:auto">4대 범주/15개 유형 체계</span>
+      </div>
+      <div class="filter-bar" aria-label="표 필터">
+        <span class="badge b-gray">필터</span>
+        <button type="button" class="fbtn active" data-cat="오도형">오도형</button>
+        <button type="button" class="fbtn active" data-cat="방해형">방해형</button>
+        <button type="button" class="fbtn active" data-cat="압박형">압박형</button>
+        <button type="button" class="fbtn active" data-cat="편취유도형">편취유도형</button>
+        <span class="fsep"></span>
+        <button type="button" class="fbtn secondary" id="resetFilters">전체보기</button>
+        <span class="small" id="filterStatus" style="margin-left:auto">표시 중: 전체</span>
+      </div>
+      <div class="table-wrap"><table class="audit-table" id="dpTable">
+        <thead><tr><th>범주</th><th>세부 유형(15개)</th><th class="result-col">결과</th><th>자체감사 의견</th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table></div>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>5. 최종 점검 결과 및 조치 권고</h3></div>
+      <details open><summary><span>🌟 기획 포인트</span><span class="badge b-green">Good</span></summary>
+        <div style="margin-top:10px"><ul style="margin:0;padding-left:18px">${planHtml}</ul></div>
+      </details>
+      <details open><summary><span>🛠️ 개선 권고 사항</span><span class="badge b-yellow">Action</span></summary>
+        <div style="margin-top:10px"><ol style="margin:0;padding-left:18px">${actionHtml}</ol></div>
+      </details>
+      <details open id="checkDetails"><summary><span>🔍 추가 확인 필요사항</span><span class="badge b-gray">Check</span></summary>
+        <div style="margin-top:10px">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+            <div class="small">체크 상태는 이 브라우저에 저장됩니다(localStorage).</div>
+            <button type="button" class="fbtn secondary" id="resetChecklist">체크 초기화</button>
+          </div>
+          <ul class="checklist" id="checklist">${ckHtml}</ul>
+        </div>
+      </details>
+      <div class="callout" style="margin-top:10px">
+        <b>📚 사례집 후보</b>
+        <div class="small" style="margin-top:5px">이 사례를 다크패턴 사례집에 추가해도 될까요?</div>
+        <div class="report-actions">
+          <button class="btn btn-primary btn-small" onclick="addCurrentCase('${escapeHtml(a.title||'')}','${escapeHtml(mainRisk.type||'')}')">사례집에 추가</button>
+          <button class="btn btn-small" onclick="switchTab('casebook')">사례집 보기</button>
+        </div>
+      </div>
+    </div>
+    <div class="report-section"><div class="sec-title"><h3>6. 최종 결론</h3></div>
+      <div class="callout"><b>${a.grade}</b> — 입력 내용 기준 <span class="em">${escapeHtml(mainRisk.type||'')}</span> 관련 확인이 우선 필요함. 실제 화면 캡처와 동작 조건을 추가 확보한 후 결재 또는 배포 전 최종 검토를 권고함.</div>
+    </div>
+    <div class="footer-report">
+      <div><b>근거 문서</b></div>
+      <div class="refs">1) 251224_(별첨) 온라인 금융상품 판매 관련 다크패턴 가이드라인.pdf<br>2) 온라인 금융상품 판매 관련 다크패턴 가이드라인 체크리스트.pdf</div>
+      <div style="margin-top:10px">※ 본 점검 결과는「온라인 금융상품 판매 관련 다크패턴 가이드라인」에 기반하여 AI가 수행한 자체점검 결과입니다.</div>
+    </div>
+  </div>`;
+  initReportInteractions();
+}
+
+function initReportInteractions(){
+  const table=document.getElementById('dpTable'), filterBar=document.querySelector('.filter-bar'), statusEl=document.getElementById('filterStatus'), resetFilters=document.getElementById('resetFilters');
+  if(table&&filterBar){const buttons=Array.from(filterBar.querySelectorAll('button[data-cat]')); const rows=Array.from(table.querySelectorAll('tbody tr')); const getActive=()=>buttons.filter(b=>b.classList.contains('active')).map(b=>b.getAttribute('data-cat')); const apply=()=>{const active=new Set(getActive()); rows.forEach(r=>{r.style.display=active.has(r.getAttribute('data-category'))?'':'none';}); if(statusEl){const list=Array.from(active); statusEl.textContent=list.length===buttons.length?'표시 중: 전체':'표시 중: '+list.join(', ');}}; buttons.forEach(btn=>btn.addEventListener('click',()=>{btn.classList.toggle('active'); if(getActive().length===0)buttons.forEach(b=>b.classList.add('active')); apply();})); if(resetFilters)resetFilters.addEventListener('click',()=>{buttons.forEach(b=>b.classList.add('active'));apply();}); apply();}
+  const checklist=document.getElementById('checklist'), resetBtn=document.getElementById('resetChecklist'); if(checklist){const key='darkpattern_checklist_latest'; const boxes=Array.from(checklist.querySelectorAll('input[type="checkbox"]')); try{const saved=JSON.parse(localStorage.getItem(key)||'{}'); boxes.forEach(b=>{if(Object.prototype.hasOwnProperty.call(saved,b.id))b.checked=!!saved[b.id];});}catch(e){} const persist=()=>{const st={};boxes.forEach(b=>st[b.id]=b.checked);try{localStorage.setItem(key,JSON.stringify(st));}catch(e){}}; boxes.forEach(b=>b.addEventListener('change',persist)); if(resetBtn)resetBtn.addEventListener('click',()=>{boxes.forEach(b=>b.checked=false);try{localStorage.removeItem(key);}catch(e){}});}
+}
+
+function switchTab(id){document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('active',b.dataset.tab===id));document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id===id));if(id==='casebook')renderGraph();}
+function addCurrentCase(title,type){addGraphCase(title,type);showToast('다크패턴 사례집에 추가되었습니다.');}
+
+// ── SWING AGENT (real Claude) ─────────────────────────────────────────
+// Init swing form dates
+(function(){
+  const d=document.getElementById('swDraftDate'); if(d) d.textContent=new Date().toLocaleDateString('ko-KR');
+  const due=document.getElementById('swDueDate'); if(due){const dt=new Date();dt.setDate(dt.getDate()+14);due.valueAsDate=dt;}
+})();
+
+function swSyncResult(cb){
+  ['swR1','swR2','swR3'].forEach(id=>{const el=document.getElementById(id);if(el&&el!==cb)el.checked=false;});
+}
+
+async function runSwingAgent(){
+  const btn=document.getElementById('swAgentBtn'), status=document.getElementById('swStatusBadge');
+  btn.disabled=true; status.textContent='점검 중'; status.style.background='#eef2ff';
+  const text = document.getElementById('swDetail').value;
+  try {
+    const a = await callClaude(text);
+    const fail=(a.rows||[]).filter(r=>r.status==='🚫').length;
+    const warn=(a.rows||[]).filter(r=>r.status==='⚠️').length;
+    status.textContent = fail>0?'수정 필요':warn>0?'보완 권고':'준수';
+    status.style.background = fail>0?'#fde8e7':warn>0?'#fff7e6':'#e6f4ea';
+    document.getElementById('swReportLink').classList.add('visible');
+    const report=document.getElementById('swReport'); report.classList.add('visible');
+    const mainRisk=(a.rows||[]).find(r=>r.status==='🚫')||(a.rows||[]).find(r=>r.status==='⚠️')||(a.rows||[])[0]||{};
+    report.innerHTML=`<b>다크패턴 점검 결과</b><br>등급: ${escapeHtml(a.grade)}<br>주요 항목: ${escapeHtml(mainRisk.type||'-')}<br>의견: ${escapeHtml(mainRisk.opinion||'-')}<br><br><span style="color:#667085">결재 전 조치: 버튼 위계, 선택/비선택 동등성, 부가서비스 권유 노출 시점을 확인하세요.</span>`;
+    // Auto-check result checkbox
+    const fail2=(a.rows||[]).filter(r=>r.status==='🚫').length;
+    const warn2=(a.rows||[]).filter(r=>r.status==='⚠️').length;
+    document.getElementById('swR1').checked = fail2===0&&warn2===0;
+    document.getElementById('swR2').checked = warn2>0&&fail2===0;
+    document.getElementById('swR3').checked = fail2>0;
+    showToast('다크패턴 점검 결과가 신청서에 반영되었습니다.');
+  } catch(err) {
+    status.textContent='오류';
+    showToast('오류: '+err.message);
+  } finally { btn.disabled=false; }
+}
+
+function toggleSwingReport(){document.getElementById('swReport').classList.toggle('visible');}
+
+function submitSwing(){
+  showToast('✅ 결재가 상신되었습니다.');
+}
+
+// ── KNOWLEDGE GRAPH ───────────────────────────────────────────────────
+let graphNodes=[
+ {id:'root',label:'온라인 금융 다크패턴\n사례집',kind:'doc',x:455,y:338,info:'금융상품 온라인 판매 화면의 다크패턴 사례를 범주, 세부유형, 근거 표현과 연결하여 축적함.'},
+ {id:'mislead',label:'오도형',kind:'cat',x:700,y:250,info:'착각·실수를 유도하는 화면·문장 구성'},
+ {id:'obstruct',label:'방해형',kind:'cat',x:295,y:325,info:'합리적 선택을 포기하도록 시간·노력·비용을 증가시키는 구조'},
+ {id:'pressure',label:'압박형',kind:'cat',x:475,y:555,info:'심리적 압박을 통해 특정 행위를 유도'},
+ {id:'sneak',label:'편취유도형',kind:'cat',x:495,y:120,info:'예상하지 못한 지출 또는 불리한 조건을 뒤늦게 인지하도록 만드는 구조'},
+ {id:'t1',label:'속임수 질문',kind:'type',x:785,y:315,info:TYPE_HINTS['속임수 질문']},
+ {id:'t2',label:'잘못된 계층구조',kind:'type',x:620,y:370,info:TYPE_HINTS['잘못된 계층구조']},
+ {id:'t3',label:'특정 옵션의 사전선택',kind:'type',x:590,y:440,info:TYPE_HINTS['특정 옵션의 사전선택']},
+ {id:'t4',label:'숨겨진 정보',kind:'type',x:235,y:260,info:TYPE_HINTS['숨겨진 정보']},
+ {id:'t5',label:'취소·탈퇴 등의 방해',kind:'type',x:205,y:475,info:TYPE_HINTS['취소·탈퇴 등의 방해']},
+ {id:'t6',label:'클릭 피로감 유발',kind:'type',x:330,y:470,info:TYPE_HINTS['클릭 피로감 유발']},
+ {id:'t7',label:'계약과정 중 기습적 광고',kind:'type',x:450,y:610,info:TYPE_HINTS['계약과정 중 기습적 광고']},
+ {id:'t8',label:'반복간섭',kind:'type',x:565,y:610,info:TYPE_HINTS['반복간섭']},
+ {id:'t9',label:'감정적 언어사용',kind:'type',x:660,y:550,info:TYPE_HINTS['감정적 언어사용']},
+ {id:'t10',label:'순차공개 가격책정',kind:'type',x:415,y:178,info:TYPE_HINTS['순차공개 가격책정']},
+ {id:'c1',label:'사례_카드신청_중단_이중질문',kind:'case',x:850,y:275,info:'카드 신청 중단 질문과 링크 수신 질문이 한 팝업에 함께 노출됨.'},
+ {id:'c2',label:'사례_카드돈_최저금리_선제시',kind:'case',x:580,y:95,info:'첫 화면에서 최저금리만 강조되고 조건은 단계적으로 노출됨.'},
+ {id:'c3',label:'사례_ELS_환자크기_시각왜곡',kind:'case',x:650,y:210,info:'상품 장점은 크게, 손실 위험은 작게 표시됨.'},
+ {id:'c4',label:'사례_ISA_해지메뉴_은닉',kind:'case',x:120,y:520,info:'해지 메뉴가 앱 내에서 바로 보이지 않고 상담 경로로 유도됨.'},
+ {id:'c5',label:'사례_마케팅수신거부_메뉴_심층배치',kind:'case',x:315,y:555,info:'거부 경로가 깊은 메뉴에 위치해 접근이 어려움.'},
+ {id:'c6',label:'사례_카드발급_유료서비스_팝업',kind:'case',x:395,y:660,info:'카드 발급 중 부가 유료서비스 권유 팝업 노출.'},
+ {id:'c7',label:'사례_리볼빙_부담문구',kind:'case',x:730,y:605,info:'결제 부담을 자극하는 문구로 리볼빙 이용을 권유.'},
+ {id:'c8',label:'사례_리볼빙_동의_사전선택',kind:'case',x:675,y:485,info:'리볼빙 이용 동의가 기본 선택 상태로 제공됨.'},
+ {id:'c9',label:'사례_펀드_재투자_찬성기본값',kind:'case',x:525,y:485,info:'펀드 재투자 여부가 찬성으로 사전선택됨.'}
+];
+let graphEdges=[
+ ['root','mislead'],['root','obstruct'],['root','pressure'],['root','sneak'],['mislead','t1'],['mislead','t2'],['mislead','t3'],['obstruct','t4'],['obstruct','t5'],['obstruct','t6'],['pressure','t7'],['pressure','t8'],['pressure','t9'],['sneak','t10'],['t1','c1'],['t10','c2'],['t2','c3'],['t4','c3'],['t5','c4'],['t6','c5'],['t7','c6'],['t9','c7'],['t3','c8'],['t3','c9']
+];
+const typeIdMap={'속임수 질문':'t1','잘못된 계층구조':'t2','특정 옵션의 사전선택':'t3','숨겨진 정보':'t4','취소·탈퇴 등의 방해':'t5','클릭 피로감 유발':'t6','계약과정 중 기습적 광고':'t7','반복간섭':'t8','감정적 언어사용':'t9','순차공개 가격책정':'t10'};
+function colorFor(k){return k==='doc'?'#9ca3af':k==='cat'?'#fb7185':k==='type'?'#a855f7':'#0b63ff';}
+function renderGraph(){
+  const svg=document.getElementById('kgSvg'); if(!svg)return; svg.innerHTML='';
+  const edgeLayer=document.createElementNS('http://www.w3.org/2000/svg','g'); const nodeLayer=document.createElementNS('http://www.w3.org/2000/svg','g'); svg.appendChild(edgeLayer); svg.appendChild(nodeLayer);
+  const byId=Object.fromEntries(graphNodes.map(n=>[n.id,n]));
+  graphEdges.forEach(([a,b])=>{const n1=byId[a],n2=byId[b]; if(!n1||!n2)return; const line=document.createElementNS('http://www.w3.org/2000/svg','line'); line.setAttribute('x1',n1.x);line.setAttribute('y1',n1.y);line.setAttribute('x2',n2.x);line.setAttribute('y2',n2.y);line.setAttribute('class','g-edge');line.dataset.a=a;line.dataset.b=b;edgeLayer.appendChild(line);});
+  graphNodes.forEach(n=>{const g=document.createElementNS('http://www.w3.org/2000/svg','g'); g.setAttribute('class','g-node '+(n.kind==='doc'?'center':'')); g.setAttribute('transform',`translate(${n.x},${n.y})`); g.dataset.id=n.id; const c=document.createElementNS('http://www.w3.org/2000/svg','circle'); c.setAttribute('r',n.kind==='doc'?9:n.kind==='cat'?10:n.kind==='type'?9:8); c.setAttribute('fill',colorFor(n.kind)); const txt=document.createElementNS('http://www.w3.org/2000/svg','text'); txt.setAttribute('x',12); txt.setAttribute('y',4); txt.textContent=n.label; g.appendChild(c); g.appendChild(txt); g.addEventListener('mouseenter',()=>highlightNode(n.id)); g.addEventListener('mouseleave',clearHighlight); nodeLayer.appendChild(g);});
+  updateCaseList();
+}
+function neighbors(id){const s=new Set([id]); graphEdges.forEach(([a,b])=>{if(a===id)s.add(b); if(b===id)s.add(a);}); return s;}
+function highlightNode(id){const keep=neighbors(id); const n=graphNodes.find(x=>x.id===id); document.getElementById('nodeInfo').innerHTML=`<b>${escapeHtml(n.label).replace(/\n/g,'<br>')}</b><br><br>${escapeHtml(n.info||'')}`; document.querySelectorAll('.g-node').forEach(g=>{const on=keep.has(g.dataset.id); g.classList.toggle('active',on); g.classList.toggle('faded',!on);}); document.querySelectorAll('.g-edge').forEach(e=>{const on=e.dataset.a===id||e.dataset.b===id; e.classList.toggle('active',on); e.classList.toggle('faded',!on);});}
+function clearHighlight(){document.querySelectorAll('.g-node,.g-edge').forEach(el=>{el.classList.remove('active','faded');}); document.getElementById('nodeInfo').textContent='원에 마우스를 올리면 연결된 사례와 유형만 강조됩니다.';}
+function updateCaseList(){const list=document.getElementById('caseList'); if(!list)return; const cases=graphNodes.filter(n=>n.kind==='case').slice(-5).reverse(); list.innerHTML=cases.map(c=>`<div class="case-item"><b>${escapeHtml(c.label)}</b>${escapeHtml(c.info)}</div>`).join('');}
+function addGraphCase(title,type){const parent=typeIdMap[type]||'mislead'; const id='new'+Date.now(); const count=graphNodes.filter(n=>n.kind==='case').length; graphNodes.push({id,label:'new_'+title,kind:'case',x:650+(count%4)*36,y:120+(count%5)*86,info:`점검 결과 ${type} 관련 사례 후보로 등록됨.`}); graphEdges.push([parent,id]); renderGraph();}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2800);}
+renderGraph();
+</script>
+</body>
+</html>
