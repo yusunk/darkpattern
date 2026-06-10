@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>다크패턴 자체감사 에이전트 | 신한투자증권</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,'Noto Sans KR',sans-serif;background:#f0f4f8;color:#1a1a2e;font-size:14px;line-height:1.6}
+/* NAV */
+.nav{background:#fff;border-bottom:2px solid #1a73e8;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;padding:0 16px}
+.nav-logo{font-weight:700;font-size:15px;color:#1a73e8;padding:14px 20px 14px 0;border-right:1px solid #e0e0e0;margin-right:8px;white-space:nowrap}
+.nav-tabs{display:flex;gap:0}
+.nav-tab{padding:16px 20px;cursor:pointer;font-size:13px;font-weight:500;color:#666;border-bottom:3px solid transparent;margin-bottom:-2px;transition:all .2s;white-space:nowrap;user-select:none}
+.nav-tab:hover{color:#1a73e8;background:#f5f8ff}
+.nav-tab.active{color:#1a73e8;border-bottom-color:#1a73e8;font-weight:600}
+/* PAGES */
+.page{display:none;max-width:1200px;margin:0 auto;padding:24px 16px}
+.page.active{display:block}
+/* HERO */
+.hero{background:linear-gradient(135deg,#1a73e8 0%,#0d47a1 100%);color:#fff;border-radius:16px;padding:40px 48px;margin-bottom:28px}
+.hero h1{font-size:28px;font-weight:700;margin-bottom:8px}
+.hero p{font-size:15px;opacity:.9;max-width:600px}
+.hero-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:4px 14px;font-size:12px;margin-bottom:16px}
+/* UPLOAD ZONE */
+.upload-section{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.upload-zone{border:2px dashed #1a73e8;border-radius:10px;padding:36px;text-align:center;cursor:pointer;transition:all .2s;background:#f8fbff}
+.upload-zone:hover{background:#e8f0fe;border-color:#0d47a1}
+.upload-zone .icon{font-size:36px;margin-bottom:8px}
+.upload-zone p{color:#555;font-size:14px}
+.upload-zone small{color:#999;font-size:12px}
+.sample-btns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
+.btn-sample{padding:8px 16px;border:1px solid #1a73e8;border-radius:20px;background:#fff;color:#1a73e8;cursor:pointer;font-size:13px;font-family:inherit;transition:all .2s}
+.btn-sample:hover,.btn-sample.selected{background:#1a73e8;color:#fff}
+.btn-run{display:block;width:100%;margin-top:16px;padding:14px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .2s}
+.btn-run:hover{background:#0d47a1}
+.btn-run:disabled{background:#aaa;cursor:not-allowed}
+/* PROGRESS */
+.progress-box{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:none}
+.progress-step{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f0f0f0;color:#999;font-size:14px}
+.progress-step:last-child{border:none}
+.step-icon{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.progress-step.done .step-icon{background:#e8f5e9}
+.progress-step.done{color:#333}
+.progress-step.active .step-icon{background:#e8f0fe;animation:pulse .8s infinite}
+.progress-step.active{color:#1a73e8;font-weight:500}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+.spinner{width:16px;height:16px;border:2px solid #ddd;border-top-color:#1a73e8;border-radius:50%;animation:spin .8s linear infinite;display:none}
+.progress-step.active .spinner{display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+/* REPORT */
+.report-panel{background:#fff;border-radius:12px;padding:0;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,.1);display:none;overflow:hidden}
+.report-header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:28px 32px}
+.report-header h2{font-size:20px;font-weight:700;margin-bottom:10px}
+.report-meta{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.meta-chip{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);border-radius:12px;padding:3px 12px;font-size:12px}
+.grade-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 16px;border-radius:20px;font-size:14px;font-weight:600}
+.grade-yellow{background:#fff3cd;color:#856404}
+.grade-red{background:#f8d7da;color:#842029}
+.grade-green{background:#d1e7dd;color:#0f5132}
+.report-body{padding:28px 32px}
+.report-section{margin-bottom:28px}
+.section-title{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid #e8f0fe;display:flex;align-items:center;gap:8px}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.info-item{background:#f8fbff;border-radius:8px;padding:12px 16px;border-left:3px solid #1a73e8}
+.info-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.info-value{font-size:13px;color:#333;font-weight:500}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.kpi-card{background:#f8fbff;border-radius:8px;padding:16px;text-align:center;border:1px solid #e0eaff}
+.kpi-num{font-size:32px;font-weight:700;color:#1a73e8}
+.kpi-label{font-size:12px;color:#666;margin-top:4px}
+.callout{border-radius:10px;padding:16px 20px;display:flex;align-items:flex-start;gap:14px}
+.callout-yellow{background:#fff8e1;border:1px solid #ffd54f}
+.callout-red{background:#fff5f5;border:1px solid #ffcdd2}
+.callout-green{background:#f1f8e9;border:1px solid #c5e1a5}
+.callout-icon{font-size:22px;flex-shrink:0}
+/* TABLE */
+.filter-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.filter-btn{padding:6px 14px;border:1px solid #ddd;border-radius:16px;background:#fff;cursor:pointer;font-size:12px;font-family:inherit;transition:all .2s;color:#666}
+.filter-btn:hover{border-color:#1a73e8;color:#1a73e8}
+.filter-btn.active{background:#1a73e8;border-color:#1a73e8;color:#fff}
+.result-table{width:100%;border-collapse:collapse;font-size:13px}
+.result-table th{background:#f8fbff;padding:10px 12px;text-align:left;font-weight:600;color:#444;border-bottom:2px solid #e0eaff;font-size:12px}
+.result-table td{padding:10px 12px;border-bottom:1px solid #f0f4f8;vertical-align:middle}
+.result-table tr:hover td{background:#fafcff}
+.result-table tr.hidden{display:none}
+.status-badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:500;white-space:nowrap}
+.s-ok{background:#d1e7dd;color:#0f5132}
+.s-warn{background:#fff3cd;color:#856404}
+.s-fail{background:#f8d7da;color:#842029}
+.s-na{background:#f0f0f0;color:#666}
+.cat-badge{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:500}
+.cat-오도형{background:#e3f2fd;color:#1565c0}
+.cat-방해형{background:#fce4ec;color:#880e4f}
+.cat-압박형{background:#fff8e1;color:#f57f17}
+.cat-편취유도형{background:#f3e5f5;color:#4a148c}
+/* COLLAPSIBLE */
+.collapsible{border:1px solid #e0e0e0;border-radius:8px;margin-bottom:10px;overflow:hidden}
+.collapsible-header{padding:14px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:#fafafa;font-weight:500;font-size:14px;user-select:none}
+.collapsible-header:hover{background:#f0f4f8}
+.collapsible-body{padding:16px;display:none;border-top:1px solid #e0e0e0;font-size:13px;color:#444;line-height:1.8}
+.collapsible.open .collapsible-body{display:block}
+.collapsible-arrow{transition:transform .2s;font-size:12px}
+.collapsible.open .collapsible-arrow{transform:rotate(180deg)}
+/* CHECKLIST */
+.checklist{list-style:none;padding:0}
+.checklist li{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f5f5f5}
+.checklist li:last-child{border:none}
+.checklist input[type=checkbox]{width:16px;height:16px;margin-top:2px;cursor:pointer;accent-color:#1a73e8}
+.checklist label{cursor:pointer;flex:1}
+/* ADD TO CASEBOOK */
+.add-case-card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:2px solid #e8f0fe;display:none}
+.add-case-card h3{font-size:16px;font-weight:600;margin-bottom:8px;color:#1a1a2e}
+.add-case-card p{color:#666;font-size:13px;margin-bottom:16px}
+.add-case-btns{display:flex;gap:10px}
+.btn-yes{padding:10px 24px;background:#1a73e8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;font-weight:500}
+.btn-yes:hover{background:#0d47a1}
+.btn-no{padding:10px 24px;background:#fff;color:#666;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit}
+.btn-no:hover{background:#f5f5f5}
+/* REPORT FOOTER */
+.report-footer{background:#f8fbff;border-top:1px solid #e0eaff;padding:16px 32px;font-size:12px;color:#888;line-height:1.8}
+/* TAB2 - FORM */
+.form-page{background:#fff;border-radius:12px;padding:28px;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.form-title{font-size:18px;font-weight:700;text-align:center;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #1a73e8;color:#1a1a2e}
+.approval-grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid #ccc;margin-bottom:20px;text-align:center}
+.approval-cell{border-right:1px solid #ccc;padding:0}
+.approval-cell:last-child{border-right:none}
+.approval-head{background:#f5f5f5;padding:6px;font-size:12px;font-weight:600;border-bottom:1px solid #ccc}
+.approval-body{padding:24px 8px;font-size:13px;min-height:60px;display:flex;align-items:center;justify-content:center}
+.meta-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid #ccc;margin-bottom:20px}
+.meta-cell{display:flex;border-right:1px solid #ccc;border-bottom:1px solid #ccc}
+.meta-cell:nth-child(3n){border-right:none}
+.meta-cell:nth-last-child(-n+3){border-bottom:none}
+.meta-key{background:#f5f5f5;padding:8px 12px;font-size:12px;font-weight:600;white-space:nowrap;border-right:1px solid #ccc;min-width:80px;display:flex;align-items:center}
+.meta-val{padding:8px 12px;font-size:13px;display:flex;align-items:center;flex:1}
+.form-table{width:100%;border-collapse:collapse;margin-bottom:20px}
+.form-table th{background:#f0f4ff;padding:10px 14px;text-align:left;font-size:13px;font-weight:600;border:1px solid #ccc;width:140px;vertical-align:top;padding-top:14px}
+.form-table td{padding:10px 14px;border:1px solid #ccc;vertical-align:top;font-size:13px}
+.form-table input[type=text],.form-table input[type=date],.form-table textarea{width:100%;padding:6px 10px;border:1px solid #ddd;border-radius:6px;font-family:inherit;font-size:13px;outline:none}
+.form-table input[type=text]:focus,.form-table textarea:focus{border-color:#1a73e8}
+.radio-group{display:flex;flex-wrap:wrap;gap:10px}
+.radio-group label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px}
+.radio-group input[type=radio]{accent-color:#1a73e8}
+.cb-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.cb-grid label{display:flex;align-items:center;gap:5px;cursor:pointer;font-size:13px}
+.cb-grid input[type=checkbox]{accent-color:#1a73e8}
+.agent-btn{padding:8px 16px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;display:inline-flex;align-items:center;gap:6px}
+.agent-btn:hover{background:#0d47a1}
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:12px;font-size:12px;font-weight:500;margin-left:10px}
+.chip-idle{background:#f0f0f0;color:#666}
+.chip-running{background:#e8f0fe;color:#1a73e8;animation:pulse .8s infinite}
+.chip-done{background:#d1e7dd;color:#0f5132}
+.mini-report{background:#f8fbff;border:1px solid #e0eaff;border-radius:8px;padding:16px;margin-top:14px;display:none;font-size:13px}
+.mini-report h4{font-size:14px;font-weight:600;margin-bottom:10px;color:#1a1a2e}
+.mini-findings{list-style:none;padding:0}
+.mini-findings li{padding:4px 0;display:flex;align-items:flex-start;gap:8px;color:#444}
+.agent-confirm{margin-top:12px;display:flex;align-items:center;gap:8px;font-size:13px;display:none}
+.agent-confirm input{accent-color:#1a73e8;width:16px;height:16px}
+.result-checks{display:flex;gap:14px}
+.result-checks label{display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;font-weight:500}
+.result-checks input[type=checkbox]{accent-color:#1a73e8;width:16px;height:16px}
+.form-actions{display:flex;justify-content:center;gap:12px;margin-top:8px}
+.btn-submit{padding:12px 36px;background:#1a73e8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:15px;font-weight:600;font-family:inherit}
+.btn-submit:hover{background:#0d47a1}
+.btn-cancel{padding:12px 36px;background:#fff;color:#666;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:15px;font-family:inherit}
+.btn-cancel:hover{background:#f5f5f5}
+/* TAB3 - CASEBOOK */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:10px;padding:16px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);border-top:3px solid #ccc}
+.stat-card.total{border-top-color:#1a73e8}
+.stat-card.s1{border-top-color:#1565c0}
+.stat-card.s2{border-top-color:#880e4f}
+.stat-card.s3{border-top-color:#f57f17}
+.stat-card.s4{border-top-color:#4a148c}
+.stat-num{font-size:28px;font-weight:700}
+.stat-label{font-size:12px;color:#666;margin-top:4px}
+.stat-card.total .stat-num{color:#1a73e8}
+.stat-card.s1 .stat-num{color:#1565c0}
+.stat-card.s2 .stat-num{color:#880e4f}
+.stat-card.s3 .stat-num{color:#f57f17}
+.stat-card.s4 .stat-num{color:#4a148c}
+.filter-bar{background:#fff;border-radius:10px;padding:14px 18px;margin-bottom:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-bar span{color:#888;font-size:12px;margin-right:4px}
+.case-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.case-card{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid #e8e8e8;transition:box-shadow .2s}
+.case-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.case-card.hidden{display:none}
+.case-card-top{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;align-items:center}
+.risk-badge{padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600}
+.risk-high{background:#f8d7da;color:#842029}
+.risk-med{background:#fff3cd;color:#856404}
+.case-title{font-size:15px;font-weight:700;margin-bottom:6px;color:#1a1a2e}
+.case-desc{font-size:13px;color:#555;margin-bottom:12px;line-height:1.6}
+.case-footer{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#999}
+.case-tag{display:inline-flex;align-items:center;gap:4px;background:#f0f4f8;border-radius:6px;padding:3px 10px;color:#555}
+.fab{position:fixed;bottom:32px;right:32px;width:52px;height:52px;border-radius:50%;background:#1a73e8;color:#fff;border:none;font-size:24px;cursor:pointer;box-shadow:0 4px 12px rgba(26,115,232,.4);display:flex;align-items:center;justify-content:center;z-index:50;transition:transform .2s}
+.fab:hover{transform:scale(1.1)}
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:16px;padding:32px;max-width:500px;width:90%;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:6px}
+.modal p{color:#666;font-size:13px;margin-bottom:20px}
+.modal-field{margin-bottom:14px}
+.modal-field label{display:block;font-size:12px;font-weight:600;color:#444;margin-bottom:4px}
+.modal-field input,.modal-field select,.modal-field textarea{width:100%;padding:8px 12px;border:1px solid #ddd;border-radius:6px;font-family:inherit;font-size:13px;outline:none}
+.modal-field input:focus,.modal-field select:focus,.modal-field textarea:focus{border-color:#1a73e8}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+.btn-confirm{padding:10px 24px;background:#1a73e8;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit;font-weight:500}
+.btn-confirm:hover{background:#0d47a1}
+.btn-modal-cancel{padding:10px 24px;background:#fff;color:#666;border:1px solid #ddd;border-radius:8px;cursor:pointer;font-size:14px;font-family:inherit}
+/* TOAST */
+.toast{position:fixed;bottom:90px;right:32px;background:#1a1a2e;color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:300;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+/* RESPONSIVE */
+@media(max-width:768px){
+  .nav-logo{display:none}
+  .nav-tab{padding:14px 12px;font-size:12px}
+  .hero{padding:24px 20px}
+  .hero h1{font-size:20px}
+  .info-grid,.kpi-grid{grid-template-columns:1fr}
+  .case-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(3,1fr)}
+  .report-body{padding:20px}
+  .report-header{padding:20px}
+  .meta-grid{grid-template-columns:1fr 1fr}
+  .cb-grid{grid-template-columns:1fr 1fr}
+  .approval-grid{grid-template-columns:repeat(3,1fr)}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">🛡️ 신한투자증권</div>
+    <div class="nav-tabs">
+      <div class="nav-tab active" onclick="switchTab('tab1',this)">🤖 에이전트 시연</div>
+      <div class="nav-tab" onclick="switchTab('tab2',this)">📋 사내 시스템 연동</div>
+      <div class="nav-tab" onclick="switchTab('tab3',this)">📚 다크패턴 사례집</div>
+    </div>
+  </div>
+</nav>
+
+<!-- ===== TAB 1 ===== -->
+<div id="tab1" class="page active">
+  <div class="hero">
+    <div class="hero-badge">🛡️ FSS 가이드라인 기반</div>
+    <h1>다크패턴 자체감사 에이전트</h1>
+    <p>금융감독원 「금융소비자 보호를 위한 다크패턴 가이드라인」에 따라 UI 화면을 자동 점검하고 감사 보고서를 생성합니다.</p>
+  </div>
+
+  <div class="upload-section">
+    <div class="upload-zone" onclick="document.getElementById('fileInput').click()" id="uploadZone">
+      <div class="icon">📂</div>
+      <p><strong>파일을 드래그하거나 클릭하여 업로드</strong></p>
+      <small>PNG, JPG, PDF 지원 · 최대 20MB</small>
+    </div>
+    <input type="file" id="fileInput" style="display:none" accept=".png,.jpg,.jpeg,.pdf" onchange="handleFileUpload(this)">
+    <div class="sample-btns">
+      <span style="align-self:center;font-size:13px;color:#666;">샘플 파일로 시연:</span>
+      <button class="btn-sample" onclick="selectSample(0,this)">📱 비대면계좌개설</button>
+      <button class="btn-sample" onclick="selectSample(1,this)">💰 펀드신규가입</button>
+      <button class="btn-sample" onclick="selectSample(2,this)">🎁 이벤트배너</button>
+    </div>
+    <button class="btn-run" id="runBtn" onclick="runAnalysis()" disabled>⚡ 점검 실행</button>
+  </div>
+
+  <div class="progress-box" id="progressBox">
+    <div style="font-weight:600;font-size:15px;margin-bottom:14px;color:#1a1a2e">🔄 AI 에이전트 분석 중...</div>
+    <div class="progress-step" id="step1"><div class="step-icon">📋</div><span>화면 구조 분석 중...</span><div class="spinner" style="margin-left:auto"></div></div>
+    <div class="progress-step" id="step2"><div class="step-icon">🔍</div><span>다크패턴 패턴 매칭 중...</span><div class="spinner" style="margin-left:auto"></div></div>
+    <div class="progress-step" id="step3"><div class="step-icon">📑</div><span>가이드라인 대조 중...</span><div class="spinner" style="margin-left:auto"></div></div>
+    <div class="progress-step" id="step4"><div class="step-icon">✍️</div><span>보고서 생성 중...</span><div class="spinner" style="margin-left:auto"></div></div>
+  </div>
+
+  <div class="report-panel" id="reportPanel"></div>
+
+  <div class="add-case-card" id="addCaseCard">
+    <h3>📚 다크패턴 사례집 추가</h3>
+    <p>이번 점검에서 발견된 다크패턴 항목을 사례집에 등록하시겠습니까? 향후 유사 화면 점검 시 참고 자료로 활용됩니다.</p>
+    <div class="add-case-btns">
+      <button class="btn-yes" onclick="openAddCaseModal()">✅ 네, 추가합니다</button>
+      <button class="btn-no" onclick="document.getElementById('addCaseCard').style.display='none'">아니오</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 2 ===== -->
+<div id="tab2" class="page">
+  <div class="form-page">
+    <div class="form-title">디지털 콘텐츠 개발 신청서</div>
+
+    <div class="approval-grid">
+      <div class="approval-cell"><div class="approval-head">담당</div><div class="approval-body"></div></div>
+      <div class="approval-cell"><div class="approval-head">팀장</div><div class="approval-body"></div></div>
+      <div class="approval-cell"><div class="approval-head">부서장</div><div class="approval-body"></div></div>
+      <div class="approval-cell"><div class="approval-head">준법감시</div><div class="approval-body"></div></div>
+      <div class="approval-cell"><div class="approval-head">최종승인</div><div class="approval-body"></div></div>
+    </div>
+
+    <div class="meta-grid">
+      <div class="meta-cell"><div class="meta-key">부서</div><div class="meta-val">디지털채널팀</div></div>
+      <div class="meta-cell"><div class="meta-key">직위</div><div class="meta-val">대리</div></div>
+      <div class="meta-cell"><div class="meta-key">성명</div><div class="meta-val">김지원</div></div>
+      <div class="meta-cell"><div class="meta-key">전화번호</div><div class="meta-val">02-3772-XXXX</div></div>
+      <div class="meta-cell"><div class="meta-key">기안일자</div><div class="meta-val" id="draftDate"></div></div>
+      <div class="meta-cell"><div class="meta-key">문서번호</div><div class="meta-val">DCD-2026-0610-042</div></div>
+    </div>
+
+    <table class="form-table">
+      <tr>
+        <th>제목</th>
+        <td><input type="text" value="SOL증권 이벤트 배너 - 여름 ETF 특집 프로모션"></td>
+      </tr>
+      <tr>
+        <th>구분</th>
+        <td>
+          <div class="radio-group">
+            <label><input type="radio" name="type" value="공지"> 대고객공지</label>
+            <label><input type="radio" name="type" value="플랫폼" checked> 플랫폼반영</label>
+            <label><input type="radio" name="type" value="이벤트"> 이벤트배너</label>
+            <label><input type="radio" name="type" value="신규화면"> 신규화면개발</label>
+            <label><input type="radio" name="type" value="UX검토"> UX검토</label>
+            <label><input type="radio" name="type" value="기타"> 기타</label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>채널</th>
+        <td>
+          <div class="cb-grid">
+            <label><input type="checkbox" checked> SOL증권</label>
+            <label><input type="checkbox"> SOL HTS</label>
+            <label><input type="checkbox"> 신한모바일</label>
+            <label><input type="checkbox" checked> 모바일웹</label>
+            <label><input type="checkbox"> 홈페이지</label>
+            <label><input type="checkbox"> 기타</label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>영역</th>
+        <td><input type="text" value="메인 홈 배너, 이벤트 랜딩페이지"></td>
+      </tr>
+      <tr>
+        <th>다크패턴 점검</th>
+        <td>
+          <button class="agent-btn" id="formAgentBtn" onclick="runFormAgent()">⚡ Agent 점검 실행</button>
+          <span class="status-chip chip-idle" id="formStatusChip">⬜ 대기 중</span>
+          <div class="mini-report" id="miniReport">
+            <h4>🔍 AI 점검 결과 요약</h4>
+            <p style="font-size:12px;color:#888;margin-bottom:10px">점검 대상: SOL증권 이벤트 배너 · 등급: <span class="grade-badge grade-yellow" style="padding:2px 10px;font-size:12px">🟡 보완권고</span></p>
+            <ul class="mini-findings">
+              <li>⚠️ <strong>거짓된 촉박함</strong> – "오늘만 특가" 문구, 실제 이벤트 기간과 불일치 가능성</li>
+              <li>⚠️ <strong>감정적 언어</strong> – "지금 놓치면 손해" 류의 불안 자극 문구 포함</li>
+              <li>✅ 필수정보 표시, 해지 경로, 수수료 공시 등 9개 항목 준수</li>
+            </ul>
+            <div style="margin-top:10px;padding:10px;background:#fff3cd;border-radius:6px;font-size:12px;color:#856404">
+              💡 <strong>권고사항:</strong> 이벤트 종료일을 명확히 표기하고 감정적 언어를 중립적 표현으로 교체하세요.
+            </div>
+            <div class="agent-confirm" id="agentConfirm">
+              <input type="checkbox" id="agentCheck">
+              <label for="agentCheck" style="cursor:pointer;font-weight:500">Agent가 생성한 보고서를 확인했습니다</label>
+            </div>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>점검 결과</th>
+        <td>
+          <div class="result-checks">
+            <label><input type="checkbox" id="rc1" onchange="syncResult('준수',this)"> ✅ 준수</label>
+            <label><input type="checkbox" id="rc2" onchange="syncResult('보완',this)"> ⚠️ 보완권고</label>
+            <label><input type="checkbox" id="rc3" onchange="syncResult('수정',this)"> 🚫 수정필요</label>
+          </div>
+        </td>
+      </tr>
+      <tr>
+        <th>세부 내용</th>
+        <td><textarea rows="4" id="formDetail">이벤트 배너 내 촉박함 유발 문구 및 감정적 언어 사용에 대한 보완 필요. Agent 점검 결과에 따라 문구 수정 후 재검토 예정.</textarea></td>
+      </tr>
+      <tr>
+        <th>사전 협의자</th>
+        <td><input type="text" value="준법감시팀 이준호 과장"></td>
+      </tr>
+      <tr>
+        <th>완료 희망일</th>
+        <td><input type="date" id="dueDate"></td>
+      </tr>
+    </table>
+
+    <div class="form-actions">
+      <button class="btn-submit" onclick="submitForm()">📤 결재 상신</button>
+      <button class="btn-cancel" onclick="alert('작성을 취소하시겠습니까?')">취소</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB 3 ===== -->
+<div id="tab3" class="page">
+  <div class="stats-row">
+    <div class="stat-card total"><div class="stat-num" id="totalCount">47</div><div class="stat-label">총 사례 수</div></div>
+    <div class="stat-card s1"><div class="stat-num">18</div><div class="stat-label">오도형</div></div>
+    <div class="stat-card s2"><div class="stat-num">12</div><div class="stat-label">방해형</div></div>
+    <div class="stat-card s3"><div class="stat-num">11</div><div class="stat-label">압박형</div></div>
+    <div class="stat-card s4"><div class="stat-num">6</div><div class="stat-label">편취유도형</div></div>
+  </div>
+
+  <div class="filter-bar">
+    <span>필터:</span>
+    <button class="filter-btn active" onclick="filterCases('전체',this)">전체</button>
+    <button class="filter-btn cat-오도형" onclick="filterCases('오도형',this)">오도형</button>
+    <button class="filter-btn cat-방해형" onclick="filterCases('방해형',this)">방해형</button>
+    <button class="filter-btn cat-압박형" onclick="filterCases('압박형',this)">압박형</button>
+    <button class="filter-btn cat-편취유도형" onclick="filterCases('편취유도형',this)">편취유도형</button>
+    <span style="margin-left:8px">위험도:</span>
+    <button class="filter-btn" onclick="filterRisk('높음',this)">🚫 높음</button>
+    <button class="filter-btn" onclick="filterRisk('보통',this)">⚠️ 보통</button>
+    <button class="filter-btn" onclick="filterRisk('전체',this)">전체</button>
+  </div>
+
+  <div class="case-grid" id="caseGrid">
+    <div class="case-card" data-cat="오도형" data-risk="높음">
+      <div class="case-card-top">
+        <span class="cat-badge cat-오도형">오도형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">특정옵션사전선택</span>
+        <span class="risk-badge risk-high">🚫 높음</span>
+      </div>
+      <div class="case-title">마케팅 수신 동의 기본 체크</div>
+      <div class="case-desc">이벤트 가입 시 마케팅 수신 동의가 기본 선택된 채로 노출되어 소비자의 선택권이 침해될 수 있음.</div>
+      <div class="case-footer"><span class="case-tag">📱 SOL증권 이벤트</span><span>2026.03.12</span></div>
+    </div>
+    <div class="case-card" data-cat="방해형" data-risk="보통">
+      <div class="case-card-top">
+        <span class="cat-badge cat-방해형">방해형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">숨겨진정보</span>
+        <span class="risk-badge risk-med">⚠️ 보통</span>
+      </div>
+      <div class="case-title">핵심 수수료 접기 영역 내 배치</div>
+      <div class="case-desc">중요 수수료 정보가 '자세히 보기' 클릭 후에만 확인 가능하도록 설계되어 소비자의 정보 접근이 방해됨.</div>
+      <div class="case-footer"><span class="case-tag">💰 펀드가입 화면</span><span>2026.02.28</span></div>
+    </div>
+    <div class="case-card" data-cat="압박형" data-risk="높음">
+      <div class="case-card-top">
+        <span class="cat-badge cat-압박형">압박형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">거짓된촉박함</span>
+        <span class="risk-badge risk-high">🚫 높음</span>
+      </div>
+      <div class="case-title">허위 카운트다운 타이머</div>
+      <div class="case-desc">이벤트 종료 카운트다운이 실제 종료일과 불일치하며, 타이머 만료 후 동일 조건으로 이벤트가 재시작됨.</div>
+      <div class="case-footer"><span class="case-tag">🎁 이벤트 배너</span><span>2026.04.05</span></div>
+    </div>
+    <div class="case-card" data-cat="오도형" data-risk="보통">
+      <div class="case-card-top">
+        <span class="cat-badge cat-오도형">오도형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">설명절차축약</span>
+        <span class="risk-badge risk-med">⚠️ 보통</span>
+      </div>
+      <div class="case-title">'모두 체크하기' 일괄동의 UI</div>
+      <div class="case-desc">필수/선택 항목이 구분 없이 일괄 체크 가능한 UI로 구성되어 소비자가 내용을 충분히 이해하지 못할 수 있음.</div>
+      <div class="case-footer"><span class="case-tag">📋 비대면계좌개설</span><span>2026.01.18</span></div>
+    </div>
+    <div class="case-card" data-cat="편취유도형" data-risk="보통">
+      <div class="case-card-top">
+        <span class="cat-badge cat-편취유도형">편취유도형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">순차공개가격</span>
+        <span class="risk-badge risk-med">⚠️ 보통</span>
+      </div>
+      <div class="case-title">단계별 비용 후공개</div>
+      <div class="case-desc">첫 화면에는 혜택만 강조하고 수수료는 최종 확인 단계에 처음 노출되어 소비자의 합리적 의사결정을 방해함.</div>
+      <div class="case-footer"><span class="case-tag">💳 상품가입 플로우</span><span>2026.05.10</span></div>
+    </div>
+    <div class="case-card" data-cat="압박형" data-risk="보통">
+      <div class="case-card-top">
+        <span class="cat-badge cat-압박형">압박형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">감정적언어</span>
+        <span class="risk-badge risk-med">⚠️ 보통</span>
+      </div>
+      <div class="case-title">손실 공포 자극 문구</div>
+      <div class="case-desc">'지금 놓치면 손해', '이 기회를 놓치지 마세요' 등 불안 감정을 자극하는 마케팅 문구가 반복적으로 사용됨.</div>
+      <div class="case-footer"><span class="case-tag">🎁 프로모션 배너</span><span>2026.04.22</span></div>
+    </div>
+    <div class="case-card" data-cat="방해형" data-risk="높음">
+      <div class="case-card-top">
+        <span class="cat-badge cat-방해형">방해형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">취소탈퇴방해</span>
+        <span class="risk-badge risk-high">🚫 높음</span>
+      </div>
+      <div class="case-title">해지 경로 7단계 이상 요구</div>
+      <div class="case-desc">서비스 해지를 위해 가입 대비 현저히 복잡한 절차(7단계 이상)를 요구하여 소비자의 선택권 행사를 방해함.</div>
+      <div class="case-footer"><span class="case-tag">📱 구독서비스 해지</span><span>2026.05.30</span></div>
+    </div>
+    <div class="case-card" data-cat="오도형" data-risk="보통">
+      <div class="case-card-top">
+        <span class="cat-badge cat-오도형">오도형</span>
+        <span class="cat-badge" style="background:#f3f4f6;color:#555">잘못된계층구조</span>
+        <span class="risk-badge risk-med">⚠️ 보통</span>
+      </div>
+      <div class="case-title">거절 버튼 시각적 약화</div>
+      <div class="case-desc">'동의' 버튼은 강조 색상으로 처리하고, '거절' 버튼은 희미한 텍스트 링크로만 처리하여 동의 유도.</div>
+      <div class="case-footer"><span class="case-tag">📋 약관동의 화면</span><span>2026.03.07</span></div>
+    </div>
+  </div>
+
+  <button class="fab" onclick="openAddCaseModal()" title="사례 추가">+</button>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>📚 사례집에 추가</h3>
+    <p>다음 사례를 다크패턴 사례집에 추가하시겠습니까?</p>
+    <div class="modal-field">
+      <label>사례명</label>
+      <input type="text" id="mCaseName" value="">
+    </div>
+    <div class="modal-field">
+      <label>범주</label>
+      <select id="mCat">
+        <option>오도형</option>
+        <option>방해형</option>
+        <option>압박형</option>
+        <option>편취유도형</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>세부유형</label>
+      <input type="text" id="mSubType" value="">
+    </div>
+    <div class="modal-field">
+      <label>위험도</label>
+      <select id="mRisk">
+        <option value="높음">🚫 높음</option>
+        <option value="보통">⚠️ 보통</option>
+      </select>
+    </div>
+    <div class="modal-field">
+      <label>설명</label>
+      <textarea id="mDesc" rows="3"></textarea>
+    </div>
+    <div class="modal-field">
+      <label>화면/서비스</label>
+      <input type="text" id="mScreen" value="">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-modal-cancel" onclick="closeModal()">취소</button>
+      <button class="btn-confirm" onclick="confirmAddCase()">✅ 추가 확인</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== NAV =====
+function switchTab(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  el.classList.add('active');
+}
+
+// ===== INIT =====
+document.getElementById('draftDate').textContent = new Date().toLocaleDateString('ko-KR');
+const d = new Date(); d.setDate(d.getDate()+14);
+document.getElementById('dueDate').valueAsDate = d;
+
+// ===== SAMPLE DATA =====
+let selectedSample = -1;
+const SAMPLES = [
+  {
+    title:'비대면계좌개설 화면 다크패턴 점검보고서',
+    screen:'비대면 계좌개설',
+    channel:'SOL증권 모바일앱',
+    date:'2026.06.10',
+    inspector:'AI 자체감사 에이전트 v2.3',
+    grade:'🟡 보완권고',
+    gradeClass:'grade-yellow',
+    gradeText:'보완권고',
+    bg:'본 점검은 「금융소비자보호법」 제46조 및 금융감독원 「디지털금융 다크패턴 가이드라인」(2024.09)에 근거하여 시행되었습니다.',
+    purpose:'비대면 계좌개설 화면의 다크패턴 해당 여부 점검 및 소비자 보호 수준 확인',
+    spirit:'공정하고 투명한 디지털 금융 환경 조성 및 소비자 자율적 의사결정 보장',
+    totalItems:15,
+    issueItems:3,
+    calloutText:'3개 항목에서 보완이 권고됩니다. 해당 항목들은 소비자의 정보 파악을 어렵게 하거나 의도치 않은 선택을 유도할 수 있어 개선이 필요합니다.',
+    rows:[
+      {cat:'오도형',type:'설명절차축약',item:'동의 절차 간소화 UI',status:'warn',detail:'약관 설명이 한 화면에 과도하게 압축되어 있음'},
+      {cat:'오도형',type:'특정옵션사전선택',item:'마케팅 수신 기본 동의',status:'warn',detail:'마케팅 알림 수신이 기본 선택 상태로 노출'},
+      {cat:'압박형',type:'기습적광고',item:'가입완료 후 광고 팝업',status:'warn',detail:'계좌 개설 완료 직후 투자 유치 광고 팝업 노출'},
+      {cat:'오도형',type:'잘못된계층구조',item:'동의/거절 버튼 구분',status:'ok',detail:'버튼 크기 및 색상이 균등하게 처리됨'},
+      {cat:'방해형',type:'숨겨진정보',item:'수수료 정보 표시',status:'ok',detail:'수수료 안내가 명확히 표시됨'},
+      {cat:'방해형',type:'취소탈퇴방해',item:'해지 경로 제공',status:'ok',detail:'계좌 해지 경로가 명확하게 안내됨'},
+      {cat:'압박형',type:'거짓된촉박함',item:'타이머/긴급 문구',status:'ok',detail:'부적절한 긴급성 문구 없음'},
+      {cat:'오도형',type:'허위광고',item:'수익률/실적 표시',status:'ok',detail:'허위 또는 과장된 실적 표시 없음'},
+      {cat:'편취유도형',type:'순차공개가격',item:'비용 선행 공시',status:'ok',detail:'제반 비용이 초기 단계에서 안내됨'},
+      {cat:'방해형',type:'반복요청',item:'재요청 빈도',status:'ok',detail:'동일 동의를 반복 요청하는 UI 없음'},
+      {cat:'압박형',type:'감정적언어',item:'불안 자극 문구',status:'ok',detail:'감정적 자극 문구 미사용'},
+      {cat:'오도형',type:'기타오도',item:'중요정보 글씨 크기',status:'ok',detail:'주요 정보의 폰트 크기가 적정 수준'},
+      {cat:'편취유도형',type:'유인판매',item:'미끼상품 유인',status:'na',detail:'해당 화면에서는 확인 불가'},
+      {cat:'방해형',type:'인터페이스방해',item:'뒤로가기 제한',status:'na',detail:'해당 화면에서는 확인 불가'},
+      {cat:'편취유도형',type:'기타편취',item:'자동결제 유도',status:'na',detail:'해당 화면에 자동결제 요소 없음'},
+    ],
+    highlights:'비대면 계좌개설 화면은 전반적으로 금융소비자 보호 기준을 준수하고 있으나, 약관 설명 간소화 및 마케팅 수신 기본 동의 설정 방식에 대한 개선이 필요합니다.',
+    improvements:'1. 마케팅 수신 동의를 비선택 기본값으로 변경\n2. 약관 동의 화면에 핵심 내용 요약 표시\n3. 가입 완료 후 팝업 광고 제거 또는 최소화',
+    additional:'추가 검토 필요: 취약 금융소비자(고령자, 장애인) 대상 접근성 및 이해도 검토 권고',
+    addCase:{name:'마케팅 수신 동의 기본 체크 (계좌개설)',cat:'오도형',sub:'특정옵션사전선택',risk:'높음',desc:'비대면 계좌개설 시 마케팅 수신 동의가 기본 선택된 채 노출',screen:'SOL증권 비대면계좌개설'}
+  },
+  {
+    title:'펀드 신규가입 화면 다크패턴 점검보고서',
+    screen:'펀드 신규가입',
+    channel:'SOL증권 모바일앱',
+    date:'2026.06.10',
+    inspector:'AI 자체감사 에이전트 v2.3',
+    grade:'🔴 리스크발견',
+    gradeClass:'grade-red',
+    gradeText:'리스크발견',
+    bg:'금융상품 가입 권유 관련 다크패턴 집중 점검을 위해 시행되었습니다. 「자본시장법」 제46조 적합성 원칙 및 금융감독원 가이드라인을 기준으로 합니다.',
+    purpose:'펀드 가입 권유 과정에서의 오도·압박형 다크패턴 해당 여부 집중 점검',
+    spirit:'금융소비자의 합리적 투자판단 보호 및 불완전판매 예방',
+    totalItems:15,
+    issueItems:3,
+    calloutText:'1개 중대 위반 항목(🚫)이 발견되었습니다. 수익률 강조 광고 문구는 허위·과장광고에 해당할 수 있으며 즉시 수정이 필요합니다.',
+    rows:[
+      {cat:'오도형',type:'허위광고',item:'수익률 강조 문구',status:'fail',detail:'"최고 연 34% 수익 달성" 등 특정 기간 수익률을 과장 강조'},
+      {cat:'오도형',type:'설명절차축약',item:'투자위험 고지 화면',status:'warn',detail:'투자위험 등급 안내가 매우 작은 글씨로 하단에만 표시'},
+      {cat:'방해형',type:'숨겨진정보',item:'환매 수수료 표시',status:'warn',detail:'환매 수수료가 3단계 이상 이동 후에만 확인 가능'},
+      {cat:'오도형',type:'잘못된계층구조',item:'동의/거절 버튼 구분',status:'ok',detail:'버튼 구분이 명확하게 처리됨'},
+      {cat:'방해형',type:'취소탈퇴방해',item:'가입 취소 경로',status:'ok',detail:'가입 취소 버튼이 명확히 제공됨'},
+      {cat:'오도형',type:'특정옵션사전선택',item:'자동재투자 기본설정',status:'ok',detail:'자동재투자 옵션이 기본 비선택으로 처리됨'},
+      {cat:'압박형',type:'거짓된촉박함',item:'가입 마감 문구',status:'ok',detail:'허위 마감 압박 문구 없음'},
+      {cat:'압박형',type:'감정적언어',item:'손실 공포 문구',status:'ok',detail:'감정적 자극 문구 미사용'},
+      {cat:'편취유도형',type:'순차공개가격',item:'수수료 선행 안내',status:'ok',detail:'운용보수가 초기 화면에 안내됨'},
+      {cat:'방해형',type:'반복요청',item:'재권유 빈도',status:'ok',detail:'단기 반복 가입 권유 없음'},
+      {cat:'오도형',type:'기타오도',item:'성과 비교 기준',status:'ok',detail:'벤치마크 비교 기준이 명확히 표시됨'},
+      {cat:'방해형',type:'인터페이스방해',item:'이전 단계 이동',status:'ok',detail:'이전 단계 이동이 제한 없이 가능'},
+      {cat:'편취유도형',type:'유인판매',item:'미끼상품 유인',status:'na',detail:'해당 화면에서는 확인 불가'},
+      {cat:'편취유도형',type:'기타편취',item:'자동결제 유도',status:'na',detail:'해당 화면에 자동결제 요소 없음'},
+      {cat:'압박형',type:'기습적광고',item:'팝업 광고',status:'na',detail:'가입 플로우 내 팝업 광고 없음'},
+    ],
+    highlights:'수익률 과장 광고 문구는 즉각적인 수정이 필요한 중대 사항입니다. 투자위험 고지 방식 및 환매 수수료 접근성도 개선이 필요합니다.',
+    improvements:'1. "연 34% 수익 달성" 등 과거 수익률 강조 문구 즉시 삭제\n2. 투자위험 등급 안내 폰트 크기 최소 12px 이상으로 상향\n3. 환매 수수료를 2단계 이내에서 확인 가능하도록 구조 개편',
+    additional:'추가 확인 필요: 금융감독원 불완전판매 모니터링 결과 연계 검토, 약관 심의 부서 협의 권고',
+    addCase:{name:'수익률 과장 강조 문구 (펀드가입)',cat:'오도형',sub:'허위광고',risk:'높음',desc:'펀드 가입 화면에서 특정 기간 최고 수익률을 과장 강조하는 광고 문구 사용',screen:'SOL증권 펀드신규가입'}
+  },
+  {
+    title:'이벤트 배너 화면 다크패턴 점검보고서',
+    screen:'이벤트 배너',
+    channel:'SOL증권 모바일앱 메인',
+    date:'2026.06.10',
+    inspector:'AI 자체감사 에이전트 v2.3',
+    grade:'🟡 보완권고',
+    gradeClass:'grade-yellow',
+    gradeText:'보완권고',
+    bg:'마케팅 이벤트 화면에 대한 정기 다크패턴 점검입니다. 금융감독원 「디지털 마케팅 가이드라인」 및 공정거래위원회 「온라인 다크패턴 자율규약」을 기준으로 합니다.',
+    purpose:'이벤트 배너 내 허위 긴박감 조성 및 감정적 언어 사용 여부 점검',
+    spirit:'공정한 디지털 마케팅 환경 구축 및 소비자의 자유로운 의사결정 보장',
+    totalItems:15,
+    issueItems:2,
+    calloutText:'2개 항목에서 보완이 권고됩니다. 거짓된 촉박함 유발 요소와 감정적 언어 사용이 확인되었으며, 해당 문구의 교체 및 이벤트 종료일 명확화가 필요합니다.',
+    rows:[
+      {cat:'압박형',type:'거짓된촉박함',item:'이벤트 카운트다운',status:'warn',detail:'타이머 표시와 실제 이벤트 종료일이 불일치할 가능성'},
+      {cat:'압박형',type:'감정적언어',item:'손실 공포 문구',status:'warn',detail:'"지금 놓치면 손해" 류의 불안 자극 문구 2건 확인'},
+      {cat:'오도형',type:'허위광고',item:'이벤트 혜택 표시',status:'ok',detail:'혜택 조건이 명확하게 기재됨'},
+      {cat:'오도형',type:'특정옵션사전선택',item:'자동 참여 설정',status:'ok',detail:'이벤트 자동 참여 기본 선택 없음'},
+      {cat:'방해형',type:'숨겨진정보',item:'이용 약관 접근',status:'ok',detail:'이벤트 약관이 배너 내 링크로 제공됨'},
+      {cat:'방해형',type:'취소탈퇴방해',item:'이벤트 취소 경로',status:'ok',detail:'참여 취소가 1~2단계 내에서 가능'},
+      {cat:'오도형',type:'설명절차축약',item:'혜택 조건 요약',status:'ok',detail:'핵심 조건이 배너 내 명시됨'},
+      {cat:'방해형',type:'반복요청',item:'팝업 재표시',status:'ok',detail:'동일 팝업 24시간 내 재표시 없음'},
+      {cat:'오도형',type:'잘못된계층구조',item:'참여/닫기 버튼',status:'ok',detail:'참여 및 닫기 버튼이 균형 있게 배치됨'},
+      {cat:'편취유도형',type:'순차공개가격',item:'이벤트 비용 공시',status:'ok',detail:'수수료 등 비용 요소가 초기에 안내됨'},
+      {cat:'압박형',type:'기습적광고',item:'연속 팝업 표시',status:'ok',detail:'연속 팝업 없음'},
+      {cat:'오도형',type:'기타오도',item:'이미지 오도 여부',status:'ok',detail:'이미지가 실제 혜택을 정확히 표현'},
+      {cat:'편취유도형',type:'유인판매',item:'미끼상품 유인',status:'na',detail:'해당 배너에서는 확인 불가'},
+      {cat:'편취유도형',type:'기타편취',item:'자동결제 유도',status:'na',detail:'배너 내 자동결제 요소 없음'},
+      {cat:'방해형',type:'인터페이스방해',item:'배너 닫기 방해',status:'na',detail:'배너 닫기 기능 정상 작동 확인'},
+    ],
+    highlights:'이벤트 배너는 전반적으로 기준을 준수하고 있으나, 마케팅 문구의 감정적 표현 및 카운트다운 정확성에 대한 검토가 필요합니다.',
+    improvements:'1. 이벤트 카운트다운과 실제 종료일 일치 여부 확인 및 수정\n2. "지금 놓치면 손해" 등 불안 자극 문구를 중립적 표현으로 교체\n3. 향후 이벤트 제작 시 다크패턴 체크리스트 사전 적용',
+    additional:'추가 확인 필요: 다국어 버전(영문) 이벤트 배너에 동일 기준 적용 여부 확인',
+    addCase:{name:'허위 카운트다운 타이머 (이벤트배너)',cat:'압박형',sub:'거짓된촉박함',risk:'높음',desc:'이벤트 배너의 종료 카운트다운이 실제 이벤트 종료일과 불일치',screen:'SOL증권 이벤트 배너'}
+  }
+];
+
+let currentSample = null;
+let activeRiskFilter = '전체';
+let activeCatFilter = '전체';
+
+function selectSample(idx, el) {
+  document.querySelectorAll('.btn-sample').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedSample = idx;
+  currentSample = SAMPLES[idx];
+  document.getElementById('runBtn').disabled = false;
+  document.getElementById('reportPanel').style.display='none';
+  document.getElementById('addCaseCard').style.display='none';
+  document.getElementById('progressBox').style.display='none';
+  resetSteps();
+}
+
+function handleFileUpload(input) {
+  if(input.files.length > 0){
+    document.querySelectorAll('.btn-sample').forEach(b => b.classList.remove('selected'));
+    selectedSample = -1;
+    currentSample = SAMPLES[0]; // default to first
+    document.getElementById('runBtn').disabled = false;
+    document.getElementById('uploadZone').querySelector('p').innerHTML = '<strong>✅ ' + input.files[0].name + '</strong> 업로드됨';
+  }
+}
+
+// drag and drop
+const uz = document.getElementById('uploadZone');
+uz.addEventListener('dragover', e => { e.preventDefault(); uz.style.background='#e8f0fe'; });
+uz.addEventListener('dragleave', () => { uz.style.background=''; });
+uz.addEventListener('drop', e => {
+  e.preventDefault(); uz.style.background='';
+  if(e.dataTransfer.files.length > 0){
+    currentSample = SAMPLES[0];
+    document.getElementById('runBtn').disabled = false;
+    uz.querySelector('p').innerHTML = '<strong>✅ ' + e.dataTransfer.files[0].name + '</strong> 업로드됨';
+  }
+});
+
+function resetSteps() {
+  [1,2,3,4].forEach(i => {
+    const s = document.getElementById('step'+i);
+    s.classList.remove('done','active');
+    s.querySelector('.spinner').style.display='none';
+    s.querySelector('.step-icon').textContent = ['📋','🔍','📑','✍️'][i-1];
+  });
+}
+
+function runAnalysis() {
+  if(!currentSample) return;
+  document.getElementById('runBtn').disabled = true;
+  document.getElementById('progressBox').style.display='block';
+  document.getElementById('reportPanel').style.display='none';
+  document.getElementById('addCaseCard').style.display='none';
+  resetSteps();
+
+  const delays = [0, 900, 1800, 2700, 3600];
+  const doneMark = ['✅','✅','✅','✅'];
+
+  function activateStep(i) {
+    const s = document.getElementById('step'+i);
+    s.classList.add('active');
+    s.querySelector('.spinner').style.display='inline-block';
+  }
+  function doneStep(i) {
+    const s = document.getElementById('step'+i);
+    s.classList.remove('active');
+    s.classList.add('done');
+    s.querySelector('.spinner').style.display='none';
+    s.querySelector('.step-icon').textContent = '✅';
+  }
+
+  setTimeout(() => activateStep(1), 0);
+  setTimeout(() => { doneStep(1); activateStep(2); }, 900);
+  setTimeout(() => { doneStep(2); activateStep(3); }, 1800);
+  setTimeout(() => { doneStep(3); activateStep(4); }, 2700);
+  setTimeout(() => {
+    doneStep(4);
+    setTimeout(() => {
+      document.getElementById('progressBox').style.display='none';
+      showReport(currentSample);
+      document.getElementById('runBtn').disabled = false;
+    }, 300);
+  }, 3500);
+}
+
+function showReport(s) {
+  const panel = document.getElementById('reportPanel');
+  const statusMap = {ok:'<span class="status-badge s-ok">✅ 준수</span>',warn:'<span class="status-badge s-warn">⚠️ 보완권고</span>',fail:'<span class="status-badge s-fail">🚫 수정필요</span>',na:'<span class="status-badge s-na">N/A</span>'};
+
+  let rows = s.rows.map((r,i) => `
+    <tr class="trow" data-cat="${r.cat}">
+      <td>${i+1}</td>
+      <td><span class="cat-badge cat-${r.cat}">${r.cat}</span></td>
+      <td>${r.type}</td>
+      <td>${r.item}</td>
+      <td>${statusMap[r.status]}</td>
+      <td style="color:#555;font-size:12px">${r.detail}</td>
+    </tr>`).join('');
+
+  const clsKey = 'dp_chk_' + s.screen;
+  let checkData = {};
+  try { checkData = JSON.parse(localStorage.getItem(clsKey)||'{}'); } catch(e){}
+
+  const checkItems = [
+    '설명절차축약 항목 개선 완료',
+    '특정옵션사전선택 기본값 수정 완료',
+    '보고서 팀장 검토 완료',
+    '준법감시팀 협의 완료',
+    '수정 개발 완료 및 재검수 예정 등록'
+  ];
+  const checkList = checkItems.map((item, i) => {
+    const checked = checkData[i] ? 'checked' : '';
+    return `<li><input type="checkbox" id="cl${i}" ${checked} onchange="saveCheck('${clsKey}',${i},this.checked)"><label for="cl${i}">${item}</label></li>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="report-header">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px">
+        <h2>📋 ${s.title}</h2>
+        <span class="grade-badge ${s.gradeClass}">${s.grade}</span>
+      </div>
+      <div class="report-meta">
+        <span class="meta-chip">📅 ${s.date}</span>
+        <span class="meta-chip">📱 ${s.screen}</span>
+        <span class="meta-chip">🏦 ${s.channel}</span>
+        <span class="meta-chip">🤖 ${s.inspector}</span>
+      </div>
+    </div>
+    <div class="report-body">
+      <div class="report-section">
+        <div class="section-title">1️⃣ 점검 배경</div>
+        <div class="info-grid">
+          <div class="info-item"><div class="info-label">점검 목적</div><div class="info-value">${s.purpose}</div></div>
+          <div class="info-item"><div class="info-label">점검 근거</div><div class="info-value">${s.bg}</div></div>
+          <div class="info-item" style="grid-column:1/-1"><div class="info-label">점검 취지</div><div class="info-value">${s.spirit}</div></div>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title">2️⃣ 점검 대상</div>
+        <div class="kpi-grid">
+          <div class="kpi-card"><div class="kpi-num">${s.totalItems}</div><div class="kpi-label">총 점검 항목</div></div>
+          <div class="kpi-card"><div class="kpi-num" style="color:${s.gradeClass==='grade-red'?'#842029':'#856404'}">${s.issueItems}</div><div class="kpi-label">이슈 발견 항목</div></div>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title">3️⃣ 점검 의견 종합</div>
+        <div class="callout callout-${s.gradeClass==='grade-red'?'red':'yellow'}">
+          <div class="callout-icon">${s.gradeClass==='grade-red'?'🚨':'💡'}</div>
+          <div>
+            <div style="font-weight:600;margin-bottom:6px">${s.grade} 등급</div>
+            <div style="font-size:13px;color:#555">${s.calloutText}</div>
+          </div>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title">4️⃣ 점검 결과 세부</div>
+        <div class="filter-btns">
+          <button class="filter-btn active" onclick="filterTable('전체',this)">전체</button>
+          <button class="filter-btn" onclick="filterTable('오도형',this)">오도형</button>
+          <button class="filter-btn" onclick="filterTable('방해형',this)">방해형</button>
+          <button class="filter-btn" onclick="filterTable('압박형',this)">압박형</button>
+          <button class="filter-btn" onclick="filterTable('편취유도형',this)">편취유도형</button>
+        </div>
+        <div style="overflow-x:auto">
+          <table class="result-table" id="resultTable">
+            <thead><tr><th>#</th><th>범주</th><th>세부유형</th><th>점검 항목</th><th>판정</th><th>비고</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title">5️⃣ 최종 점검 결과</div>
+        <div class="collapsible open" id="col1">
+          <div class="collapsible-header" onclick="toggleCol('col1')"><span>🌟 기획 포인트</span><span class="collapsible-arrow">▼</span></div>
+          <div class="collapsible-body">${s.highlights}</div>
+        </div>
+        <div class="collapsible" id="col2">
+          <div class="collapsible-header" onclick="toggleCol('col2')"><span>🛠️ 개선 권고 사항</span><span class="collapsible-arrow">▼</span></div>
+          <div class="collapsible-body" style="white-space:pre-line">${s.improvements}</div>
+        </div>
+        <div class="collapsible" id="col3">
+          <div class="collapsible-header" onclick="toggleCol('col3')"><span>🔍 추가 확인 사항</span><span class="collapsible-arrow">▼</span></div>
+          <div class="collapsible-body">${s.additional}</div>
+        </div>
+      </div>
+      <div class="report-section">
+        <div class="section-title">☑️ 후속 조치 체크리스트</div>
+        <ul class="checklist">${checkList}</ul>
+      </div>
+    </div>
+    <div class="report-footer">
+      ※ 본 보고서는 AI 자체감사 에이전트가 자동 생성한 초안으로, 최종 결론은 준법감시팀의 검토를 거쳐 확정됩니다.<br>
+      ※ 점검 기준: 금융감독원 「디지털금융 다크패턴 가이드라인」(2024.09) · 「금융소비자보호법」 제46조
+    </div>
+  `;
+  panel.style.display = 'block';
+  panel.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(() => {
+    document.getElementById('addCaseCard').style.display='block';
+    document.getElementById('addCaseCard').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }, 500);
+}
+
+function filterTable(cat, btn) {
+  document.querySelectorAll('.filter-btns .filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('#resultTable .trow').forEach(row => {
+    row.classList.toggle('hidden', cat !== '전체' && row.dataset.cat !== cat);
+  });
+}
+
+function toggleCol(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function saveCheck(key, idx, val) {
+  let data = {};
+  try { data = JSON.parse(localStorage.getItem(key)||'{}'); } catch(e){}
+  data[idx] = val;
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+// ===== TAB2 =====
+function runFormAgent() {
+  const btn = document.getElementById('formAgentBtn');
+  const chip = document.getElementById('formStatusChip');
+  btn.disabled = true;
+  chip.className = 'status-chip chip-running';
+  chip.textContent = '⚡ 분석 중...';
+  setTimeout(() => {
+    chip.className = 'status-chip chip-done';
+    chip.textContent = '✅ 점검 완료';
+    btn.disabled = false;
+    document.getElementById('miniReport').style.display='block';
+    document.getElementById('agentConfirm').style.display='flex';
+    document.getElementById('rc2').checked = true;
+    document.getElementById('miniReport').scrollIntoView({behavior:'smooth',block:'nearest'});
+  }, 2800);
+}
+
+function syncResult(type, cb) {
+  if(cb.checked){
+    ['rc1','rc2','rc3'].forEach(id => {
+      if(document.getElementById(id) !== cb) document.getElementById(id).checked = false;
+    });
+  }
+}
+
+function submitForm() {
+  const agentCheck = document.getElementById('agentCheck');
+  const miniReport = document.getElementById('miniReport');
+  if(miniReport.style.display==='block' && !agentCheck.checked){
+    alert('⚠️ Agent가 생성한 보고서 확인을 체크해 주세요.');
+    return;
+  }
+  showToast('✅ 결재가 상신되었습니다.');
+}
+
+// ===== TAB3 =====
+function filterCases(cat, btn) {
+  activeCatFilter = cat;
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
+    if(['전체','오도형','방해형','압박형','편취유도형'].includes(b.textContent.trim())) b.classList.remove('active');
+  });
+  btn.classList.add('active');
+  applyCaseFilters();
+}
+
+function filterRisk(risk, btn) {
+  activeRiskFilter = risk;
+  document.querySelectorAll('.filter-bar .filter-btn').forEach(b => {
+    if(b.textContent.includes('높음') || b.textContent.includes('보통') || b.textContent.trim()==='전체') {
+      if(!['전체','오도형','방해형','압박형','편취유도형'].includes(b.textContent.trim())) b.classList.remove('active');
+    }
+  });
+  btn.classList.add('active');
+  applyCaseFilters();
+}
+
+function applyCaseFilters() {
+  document.querySelectorAll('.case-card').forEach(c => {
+    const catMatch = activeCatFilter === '전체' || c.dataset.cat === activeCatFilter;
+    const riskMatch = activeRiskFilter === '전체' || c.dataset.risk === activeRiskFilter;
+    c.classList.toggle('hidden', !(catMatch && riskMatch));
+  });
+}
+
+// ===== MODAL =====
+function openAddCaseModal() {
+  const s = currentSample ? currentSample.addCase : {name:'',cat:'오도형',sub:'',risk:'높음',desc:'',screen:''};
+  document.getElementById('mCaseName').value = s.name||'';
+  document.getElementById('mCat').value = s.cat||'오도형';
+  document.getElementById('mSubType').value = s.sub||'';
+  document.getElementById('mRisk').value = s.risk||'높음';
+  document.getElementById('mDesc').value = s.desc||'';
+  document.getElementById('mScreen').value = s.screen||'';
+  document.getElementById('modalOverlay').classList.add('show');
+}
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+function confirmAddCase() {
+  const name = document.getElementById('mCaseName').value;
+  const cat = document.getElementById('mCat').value;
+  const sub = document.getElementById('mSubType').value;
+  const risk = document.getElementById('mRisk').value;
+  const desc = document.getElementById('mDesc').value;
+  const screen = document.getElementById('mScreen').value;
+  if(!name){ alert('사례명을 입력해 주세요.'); return; }
+
+  const riskBadge = risk === '높음' ? '<span class="risk-badge risk-high">🚫 높음</span>' : '<span class="risk-badge risk-med">⚠️ 보통</span>';
+  const today = new Date().toLocaleDateString('ko-KR').replace(/\s/g,'').replace(/\./g,'.').slice(0,-1);
+  const card = document.createElement('div');
+  card.className = 'case-card';
+  card.dataset.cat = cat;
+  card.dataset.risk = risk;
+  card.innerHTML = `
+    <div class="case-card-top">
+      <span class="cat-badge cat-${cat}">${cat}</span>
+      <span class="cat-badge" style="background:#f3f4f6;color:#555">${sub}</span>
+      ${riskBadge}
+    </div>
+    <div class="case-title">${name}</div>
+    <div class="case-desc">${desc}</div>
+    <div class="case-footer"><span class="case-tag">📱 ${screen}</span><span>${today}</span></div>
+  `;
+  card.style.animation = 'fadeIn .4s ease';
+  document.getElementById('caseGrid').prepend(card);
+
+  // update total count
+  const tc = document.getElementById('totalCount');
+  tc.textContent = parseInt(tc.textContent) + 1;
+
+  closeModal();
+  document.getElementById('addCaseCard').style.display='none';
+  showToast('사례집에 추가되었습니다 ✓');
+
+  // Switch to tab3
+  setTimeout(() => {
+    document.querySelectorAll('.nav-tab')[2].click();
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+  }, 400);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+// CSS animation for new card
+const style = document.createElement('style');
+style.textContent = '@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
